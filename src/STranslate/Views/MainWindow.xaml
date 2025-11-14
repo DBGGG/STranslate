@@ -70,10 +70,13 @@
             Modifiers="{Binding HotkeySettings.SaveToVocabularyHotkey.Key, Converter={cnvt:StringToKeyBindingConverter}, ConverterParameter={x:Static cnvt:HotkeyMode.Modifiers}}" />
     </Window.InputBindings>
     <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="32" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
         <control:HeaderControl
-            Height="32"
             Padding="6,3,6,0"
-            VerticalAlignment="Top"
+            VerticalAlignment="Center"
             ColorSchemeCommand="{Binding ChangeColorSchemeCommand}"
             IsColorSchemeVisible="{Binding Settings.IsColorSchemeVisible}"
             IsHideInput="{Binding Settings.HideInput}"
@@ -85,7 +88,7 @@
             ScreenshotTranslateInImage="{Binding Settings.ScreenshotTranslateInImage}"
             SettingCommand="{Binding OpenSettingsCommand}" />
 
-        <ui:ScrollViewerEx Margin="10,42,10,5">
+        <ui:ScrollViewerEx Grid.Row="1" Margin="10,5">
             <StackPanel>
                 <!--  //  InputControl  //  -->
                 <control:InputControl
