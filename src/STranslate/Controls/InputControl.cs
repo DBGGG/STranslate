@@ -1,13 +1,21 @@
-using CommunityToolkit.Mvvm.DependencyInjection;
-using STranslate.Core;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media.Animation;
 
 namespace STranslate.Controls;
 
 public class InputControl : Control
 {
+    #region Constants
+
+    private const string PartTextBoxName = "PART_TextBox";
+    private const string PartFontSizeHintBorderName = "PART_FontSizeHintBorder";
+    private const string PartFontSizeTextName = "PART_FontSizeText";
+    private const int FontSizeHintAnimationDurationMs = 1200;
+
+    #endregion
+
     static InputControl()
     {
         DefaultStyleKeyProperty.OverrideMetadata(typeof(InputControl),
@@ -80,6 +88,24 @@ public class InputControl : Control
             typeof(CornerRadius),
             typeof(InputControl),
             new PropertyMetadata(new CornerRadius(4)));
+
+    /// <summary>
+    /// 字体大小，用于读取和设置
+    /// </summary>
+    public double CurrentFontSize
+    {
+        get => (double)GetValue(CurrentFontSizeProperty);
+        set => SetValue(CurrentFontSizeProperty, value);
+    }
+
+    public static readonly DependencyProperty CurrentFontSizeProperty =
+        DependencyProperty.Register(
+            nameof(CurrentFontSize),
+            typeof(double),
+            typeof(InputControl),
+            new FrameworkPropertyMetadata(
+                14.0,
+                FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
 
     public ICommand? ExecuteCommand
     {
@@ -178,12 +204,16 @@ public class InputControl : Control
             typeof(InputControl));
 
     private TextBox? _textBox;
+    private Border? _fontSizeHintBorder;
+    private TextBlock? _fontSizeText;
 
     public override void OnApplyTemplate()
     {
         base.OnApplyTemplate();
 
-        _textBox = GetTemplateChild("PART_TextBox") as TextBox;
+        _textBox = GetTemplateChild(PartTextBoxName) as TextBox;
+        _fontSizeHintBorder = GetTemplateChild(PartFontSizeHintBorderName) as Border;
+        _fontSizeText = GetTemplateChild(PartFontSizeTextName) as TextBlock;
 
         // 绑定粘贴命令
         if (_textBox != null)
@@ -208,10 +238,8 @@ public class InputControl : Control
         {
             try
             {
-                var settings = Ioc.Default.GetRequiredService<Settings>();
-
                 // 获取当前字体大小
-                var currentFontSize = settings.FontSize;
+                var currentFontSize = CurrentFontSize;
 
                 // 根据滚轮方向调整字体大小
                 var delta = e.Delta > 0 ? 1 : -1;
@@ -223,7 +251,8 @@ public class InputControl : Control
                 // 更新字体大小
                 if (Math.Abs(newFontSize - currentFontSize) > 0.01)
                 {
-                    settings.FontSize = newFontSize;
+                    CurrentFontSize = newFontSize;
+                    ShowFontSizeHint();
                 }
 
                 // 标记事件已处理，防止页面滚动
@@ -235,6 +264,35 @@ public class InputControl : Control
                 e.Handled = false;
             }
         }
+    }
+
+    /// <summary>
+    /// 显示字体大小调节提示
+    /// </summary>
+    private void ShowFontSizeHint()
+    {
+        if (_fontSizeHintBorder == null)
+            return;
+
+        // 设置为可见并完全不透明
+        _fontSizeHintBorder.Visibility = Visibility.Visible;
+        _fontSizeHintBorder.Opacity = 1.0;
+
+        // 创建淡出动画
+        var duration = TimeSpan.FromMilliseconds(FontSizeHintAnimationDurationMs);
+        var fadeOutAnimation = new DoubleAnimation(1.0, 0.0, duration)
+        {
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn },
+            BeginTime = TimeSpan.FromMilliseconds(200) // 延迟200ms开始淡出
+        };
+
+        // 动画完成后隐藏
+        fadeOutAnimation.Completed += (s, e) =>
+        {
+            _fontSizeHintBorder?.Visibility = Visibility.Collapsed;
+        };
+
+        _fontSizeHintBorder.BeginAnimation(UIElement.OpacityProperty, fadeOutAnimation, HandoffBehavior.SnapshotAndReplace);
     }
 
     /// <summary>

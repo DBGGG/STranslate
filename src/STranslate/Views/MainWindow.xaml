@@ -95,6 +95,7 @@
                     x:Name="PART_Input"
                     Margin="0,0,0,10"
                     CopyCommand="{Binding CopyCommand}"
+                    CurrentFontSize="{Binding Settings.FontSize}"
                     ExecuteCommand="{Binding TranslateCommand}"
                     ForceExecuteCommand="{Binding TranslateCommand}"
                     HasActivedVocabulary="{Binding VocabularyInstance.HasActivedVocabulary}"

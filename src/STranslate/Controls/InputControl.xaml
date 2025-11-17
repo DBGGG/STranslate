@@ -110,6 +110,38 @@
                                     </ikw:SimpleStackPanel>
                                 </ui:ElevationBorder>
                             </ikw:SimpleStackPanel>
+
+                            <!--  字体大小调节提示  -->
+                            <Border
+                                x:Name="PART_FontSizeHintBorder"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Background="#a0000000"
+                                BorderThickness="0"
+                                CornerRadius="10"
+                                IsHitTestVisible="False">
+                                <Border.Style>
+                                    <Style TargetType="{x:Type Border}">
+                                        <Setter Property="Opacity" Value="0" />
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </Style>
+                                </Border.Style>
+                                <ikw:SimpleStackPanel
+                                    Margin="12,8"
+                                    Orientation="Horizontal"
+                                    Spacing="6">
+                                    <ui:FontIcon
+                                        FontSize="{DynamicResource STControlFontSize16}"
+                                        Foreground="White"
+                                        Icon="{x:Static ui:FluentSystemIcons.TextFontSize_20_Regular}" />
+                                    <TextBlock
+                                        x:Name="PART_FontSizeText"
+                                        VerticalAlignment="Center"
+                                        FontSize="{DynamicResource STControlFontSize15}"
+                                        Foreground="White"
+                                        Text="{Binding RelativeSource={RelativeSource Mode=TemplatedParent}, Path=CurrentFontSize, StringFormat={}{0}}" />
+                                </ikw:SimpleStackPanel>
+                            </Border>
                         </Grid>
                     </Border>
                 </ControlTemplate>
