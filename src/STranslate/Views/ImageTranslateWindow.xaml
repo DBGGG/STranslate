@@ -90,6 +90,14 @@
                     <RowDefinition Height="*" />
                     <RowDefinition Height="48" />
                 </Grid.RowDefinitions>
+                <ui:InfoBar
+                    Title="{DynamicResource NoLocationInfoTitle}"
+                    Margin="10"
+                    VerticalAlignment="Top"
+                    Panel.ZIndex="1000"
+                    IsOpen="{Binding IsNoLocationInfoVisible, Mode=TwoWay}"
+                    Message="{DynamicResource NoLocationInfoMessageForImTrans}"
+                    Severity="Warning" />
 
                 <Border
                     Background="{DynamicResource {x:Static ui:ThemeKeys.CardBackgroundFillColorDefaultBrushKey}}"

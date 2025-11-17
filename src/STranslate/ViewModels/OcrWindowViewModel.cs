@@ -148,7 +148,7 @@ public partial class OcrWindowViewModel : ObservableObject, IDisposable
             if (!_lastOcrResult.IsSuccess || string.IsNullOrEmpty(_lastOcrResult.Text))
                 return;
 
-            IsNoLocationInfoVisible = !HasBoxPoints(_lastOcrResult);
+            IsNoLocationInfoVisible = !Utilities.HasBoxPoints(_lastOcrResult);
 
             _annotatedImage = GenerateAnnotatedImage(_lastOcrResult, _sourceImage);
             PopulateOcrWords(_lastOcrResult);
@@ -582,7 +582,7 @@ public partial class OcrWindowViewModel : ObservableObject, IDisposable
         ArgumentNullException.ThrowIfNull(image);
 
         // 没有位置信息的话返回原图
-        if (!HasBoxPoints(ocrResult))
+        if (!Utilities.HasBoxPoints(ocrResult))
             return image;
 
         var drawingVisual = new DrawingVisual();
@@ -636,12 +636,6 @@ public partial class OcrWindowViewModel : ObservableObject, IDisposable
         }
         geometry.Freeze();
         return geometry;
-    }
-
-    private static bool HasBoxPoints(OcrResult ocrResult)
-    {
-        return ocrResult.OcrContents != null &&
-               ocrResult.OcrContents.Any(content => content.BoxPoints != null && content.BoxPoints.Count > 0);
     }
 
     #endregion

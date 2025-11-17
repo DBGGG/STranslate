@@ -102,6 +102,9 @@ public partial class ImageTranslateWindowViewModel : ObservableObject, IDisposab
     [ObservableProperty]
     public partial string ProcessRingText { get; set; } = string.Empty;
 
+    [ObservableProperty]
+    public partial bool IsNoLocationInfoVisible { get; set; } = false;
+
     /// <summary>
     /// 翻译结果
     /// </summary>
@@ -167,6 +170,8 @@ public partial class ImageTranslateWindowViewModel : ObservableObject, IDisposab
                 _snackbar.ShowError(_i18n.GetTranslation("OcrFailed"));
                 return;
             }
+
+            IsNoLocationInfoVisible = !Utilities.HasBoxPoints(_lastOcrResult);
 
             // 生成原始OCR标注图像（显示识别边框）
             //var originalAnnotatedImage = GenerateAnnotatedImage(_lastOcrResult, _sourceImage);
@@ -511,6 +516,7 @@ public partial class ImageTranslateWindowViewModel : ObservableObject, IDisposab
         DisplayImage = null;
         _lastOcrResult = null;
         IsShowingFitToWindow = false;
+        IsNoLocationInfoVisible = false;
     }
 
     #endregion
@@ -722,11 +728,8 @@ public partial class ImageTranslateWindowViewModel : ObservableObject, IDisposab
         ArgumentNullException.ThrowIfNull(image);
 
         // 没有位置信息的话返回原图
-        if (ocrResult?.OcrContents == null ||
-            ocrResult.OcrContents.All(x => x.BoxPoints?.Count == 0))
-        {
+        if (!Utilities.HasBoxPoints(ocrResult))
             return image;
-        }
 
         var drawingVisual = new DrawingVisual();
 
@@ -802,7 +805,7 @@ public partial class ImageTranslateWindowViewModel : ObservableObject, IDisposab
     /// <param name="ocrResult">OCR 识别结果</param>
     private void ApplyLayoutAnalysis(OcrResult ocrResult)
     {
-        if (ocrResult?.OcrContents == null || ocrResult.OcrContents.Count == 0)
+        if (!Utilities.HasBoxPoints(ocrResult))
             return;
 
 #if DEBUG

@@ -1220,4 +1220,14 @@ public class Utilities
     #endregion
 
     #endregion
+
+    #region OcrUtils
+
+    public static bool HasBoxPoints(OcrResult ocrResult)
+    {
+        return ocrResult.OcrContents != null &&
+               ocrResult.OcrContents.Any(content => content.BoxPoints != null && content.BoxPoints.Count > 0);
+    }
+
+    #endregion
 }
