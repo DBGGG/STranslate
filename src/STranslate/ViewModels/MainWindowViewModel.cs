@@ -164,6 +164,11 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
 
         if (Settings.HistoryLimit > 0 && history != null)
         {
+            // 按服务启用顺序排序
+            var enabledServices = TranslateInstance.Services.Where(x => x.IsEnabled).ToList();
+            history.Data = history.Data
+                .OrderBy(data => enabledServices.FindIndex(svc => svc.ServiceID.Equals(data.ServiceID)))
+                .ToList();
             await _sqlService.InsertDataAsync(history, (long)Settings.HistoryLimit).ConfigureAwait(false);
         }
     }
