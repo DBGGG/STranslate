@@ -273,9 +273,13 @@
                 Background="{DynamicResource CardStrokeColorDefaultBrush}"
                 ResizeBehavior="PreviousAndNext"
                 ResizeDirection="Columns" />
-            <ui:ScrollViewerEx Grid.Column="2" Margin="20,0,0,0">
-                <ContentControl Content="{Binding SettingUI}" />
-            </ui:ScrollViewerEx>
+            <Grid Grid.Column="2" Margin="20,0,0,0">
+                <control:STranslateBadge Visibility="{Binding SelectedItem, Converter={cnvt:EqualToVisibilityConverter}}" />
+
+                <ui:ScrollViewerEx>
+                    <ContentControl Content="{Binding SettingUI}" />
+                </ui:ScrollViewerEx>
+            </Grid>
         </Grid>
     </Grid>
 </ui:Page>
