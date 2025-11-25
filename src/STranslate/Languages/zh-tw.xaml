@@ -203,8 +203,7 @@
     <!--  History Page  -->
     <sys:String x:Key="Total">共</sys:String>
     <sys:String x:Key="Item">項</sys:String>
-    <sys:String x:Key="HistorySearch">請輸入搜尋紀錄...</sys:String>
-    <sys:String x:Key="HistorySearchToolTip">按 Ctrl+F 搜尋紀錄</sys:String>
+    <sys:String x:Key="HistorySearch">請輸入或按 Ctrl+F搜尋紀錄</sys:String>
 
     <!--  // About Page //  -->
     <sys:String x:Key="UserDataLocation">使用者資料位置</sys:String>

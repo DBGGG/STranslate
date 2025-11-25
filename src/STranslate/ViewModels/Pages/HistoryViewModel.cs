@@ -62,11 +62,15 @@ public partial class HistoryViewModel : ObservableObject
         }
 
         var historyItems = await _sqlService.GetDataAsync(SearchText, _searchCts.Token);
-        App.Current.Dispatcher.Invoke(() => HistoryItems.Clear());
-        if (historyItems == null) return;
 
-        foreach (var item in historyItems)
-            App.Current.Dispatcher.Invoke(() => HistoryItems.Add(item));
+        App.Current.Dispatcher.Invoke(() =>
+        {
+            HistoryItems.Clear();
+            if (historyItems == null) return;
+
+            foreach (var item in historyItems)
+                HistoryItems.Add(item);
+        });
     }
 
     [RelayCommand]

@@ -26,15 +26,22 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <DockPanel Grid.Row="0" Margin="0,0,0,12">
+        <DockPanel Margin="0,0,0,12">
             <TextBlock
                 DockPanel.Dock="Left"
                 Style="{DynamicResource {x:Static ui:ThemeKeys.SubtitleTextBlockStyleKey}}"
                 Text="{DynamicResource History}" />
+            <control:IconButton
+                Margin="10,0,0,0"
+                Command="{Binding RefreshCommand}"
+                Icon="{x:Static ui:FluentSystemIcons.ArrowSync_20_Regular}" />
         </DockPanel>
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="2*" MinWidth="200" />
+                <ColumnDefinition
+                    Width="2*"
+                    MinWidth="200"
+                    MaxWidth="400" />
                 <ColumnDefinition Width="1" />
                 <ColumnDefinition Width="3*" MinWidth="300" />
             </Grid.ColumnDefinitions>
@@ -48,37 +55,13 @@
                     x:Name="PART_SearchBox"
                     VerticalAlignment="Top"
                     ui:ControlHelper.PlaceholderText="{DynamicResource HistorySearch}"
-                    Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                    ToolTip="{DynamicResource HistorySearchToolTip}"
-                    ToolTipService.InitialShowDelay="200"
-                    ToolTipService.Placement="Top" />
-
+                    Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" />
                 <ListBox
                     Grid.Row="1"
                     control:ListBoxHelper.ScrollAtBottomCommand="{Binding LoadMoreCommand}"
                     Background="Transparent"
                     ItemsSource="{Binding HistoryItems}"
-                    SelectedItem="{Binding SelectedItem}"
-                    VirtualizingStackPanel.IsVirtualizing="True"
-                    VirtualizingStackPanel.VirtualizationMode="Recycling">
-                    <ListBox.ContextMenu>
-                        <ContextMenu>
-                            <MenuItem Command="{Binding Source={StaticResource VmProxy}, Path=Data.RefreshCommand}" Header="刷新">
-                                <MenuItem.Icon>
-                                    <ui:FontIcon Icon="{x:Static ui:FluentSystemIcons.ArrowSync_20_Regular}" />
-                                </MenuItem.Icon>
-                            </MenuItem>
-                            <MenuItem
-                                Command="{Binding Source={StaticResource VmProxy}, Path=Data.DeleteCommand}"
-                                CommandParameter="{Binding Source={StaticResource VmProxy}, Path=Data.SelectedItem}"
-                                Header="{DynamicResource Delete}">
-                                <MenuItem.Icon>
-                                    <ui:FontIcon Icon="{x:Static ui:FluentSystemIcons.Delete_20_Regular}" />
-                                </MenuItem.Icon>
-                            </MenuItem>
-                        </ContextMenu>
-                    </ListBox.ContextMenu>
-
+                    SelectedItem="{Binding SelectedItem}">
                     <ListBox.ItemContainerStyle>
                         <Style BasedOn="{StaticResource {x:Type ListBoxItem}}" TargetType="ListBoxItem">
                             <Setter Property="Height" Value="40" />

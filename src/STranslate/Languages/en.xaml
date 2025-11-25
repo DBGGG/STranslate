@@ -203,8 +203,7 @@
     <!--  History Page  -->
     <sys:String x:Key="Total">Total</sys:String>
     <sys:String x:Key="Item">item</sys:String>
-    <sys:String x:Key="HistorySearch">Input to search histories...</sys:String>
-    <sys:String x:Key="HistorySearchToolTip">Ctrl+F to search histories</sys:String>
+    <sys:String x:Key="HistorySearch">Input/Ctrl+F to search histories</sys:String>
 
     <!--  // About Page //  -->
     <sys:String x:Key="UserDataLocation">User Data Location</sys:String>
