@@ -239,6 +239,12 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             if (result.ResultType == DictionaryResultType.Error)
                 return;
 
+            if (Settings.CopyAfterTranslationNotAutomatic)
+            {
+                Utilities.SetText(result.Text);
+                _snakebar.ShowSuccess(string.Format(_i18n.GetTranslation("CopiedToClipboard"), service.DisplayName));
+            }
+
             history ??= new HistoryModel
             {
                 Time = DateTime.Now,
@@ -262,6 +268,12 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         var translateResult = await ExecuteAsync(plugin, source, target, cancellationToken).ConfigureAwait(false);
         if (!plugin.TransResult.IsSuccess)
             return;
+
+        if (Settings.CopyAfterTranslationNotAutomatic)
+        {
+            Utilities.SetText(translateResult.Text);
+            _snakebar.ShowSuccess(string.Format(_i18n.GetTranslation("CopiedToClipboard"), service.DisplayName));
+        }
 
         history ??= new HistoryModel
         {
