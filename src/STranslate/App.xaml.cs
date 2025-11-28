@@ -239,7 +239,7 @@ public partial class App : ISingleInstanceApp, INavigation, IDisposable
                 return;
             }
 
-            iNKORE.UI.WPF.Modern.Controls.MessageBox.Show(info, Constant.AppName, MessageBoxButton.OK, MessageBoxImage.Information);
+            _notification?.Show(Constant.AppName, info);
             _logger?.LogDebug($"The information message box is shown successfully [{info}].");
         }
         catch (Exception ex)
