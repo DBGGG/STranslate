@@ -74,14 +74,14 @@
                         BorderThickness="1"
                         CornerRadius="5"
                         FlowDirection="LeftToRight"
-                        Visibility="{Binding Instance.ImageTranslateService, Converter={cnvt:EqualToVisibilityInverseConverter}}">
+                        Visibility="{Binding Service.ImageTranslateService, Converter={cnvt:EqualToVisibilityInverseConverter}}">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="20" />
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <Image Source="{Binding Instance.ImageTranslateService.MetaData.IconPath}" />
+                            <Image Source="{Binding Service.ImageTranslateService.MetaData.IconPath}" />
                             <TextBlock
                                 Grid.Column="1"
                                 Margin="5,0"
@@ -89,14 +89,14 @@
                                 FontSize="{DynamicResource STControlFontSize12}"
                                 FontWeight="SemiBold"
                                 Foreground="{DynamicResource {x:Static ui:ThemeKeys.SystemFillColorSuccessBrushKey}}"
-                                Text="{Binding Instance.ImageTranslateService.DisplayName}"
+                                Text="{Binding Service.ImageTranslateService.DisplayName}"
                                 TextTrimming="CharacterEllipsis"
-                                ToolTipService.ToolTip="{Binding Instance.ImageTranslateService.DisplayName}" />
+                                ToolTipService.ToolTip="{Binding Service.ImageTranslateService.DisplayName}" />
                             <control:Badge
                                 Grid.Column="2"
                                 Margin="2,0"
                                 FontSize="{DynamicResource STControlFontSize10}"
-                                IsOfficial="{Binding Instance.ImageTranslateService.MetaData.IsPrePlugin}" />
+                                IsOfficial="{Binding Service.ImageTranslateService.MetaData.IsPrePlugin}" />
                         </Grid>
                     </ui:ElevationBorder>
                     <ui:ElevationBorder
@@ -111,7 +111,7 @@
                         BorderBrush="{DynamicResource ControlElevationBorderBrush}"
                         BorderThickness="1"
                         CornerRadius="5"
-                        Visibility="{Binding Instance.ImageTranslateService, Converter={cnvt:EqualToVisibilityConverter}}">
+                        Visibility="{Binding Service.ImageTranslateService, Converter={cnvt:EqualToVisibilityConverter}}">
                         <TextBlock
                             Margin="5,0"
                             VerticalAlignment="Center"
@@ -124,7 +124,7 @@
                         Command="{Binding DeactiveImTranCommand}"
                         FontSize="{DynamicResource STControlFontSize8}"
                         Icon="{x:Static ui:FluentSystemIcons.Delete_20_Regular}"
-                        Visibility="{Binding Instance.ImageTranslateService, Converter={cnvt:EqualToVisibilityInverseConverter}}" />
+                        Visibility="{Binding Service.ImageTranslateService, Converter={cnvt:EqualToVisibilityInverseConverter}}" />
                 </Grid>
                 <Separator
                     Grid.Column="1"
@@ -164,14 +164,14 @@
                         BorderBrush="{DynamicResource ControlElevationBorderBrush}"
                         BorderThickness="1"
                         CornerRadius="5"
-                        Visibility="{Binding Instance.ReplaceService, Converter={cnvt:EqualToVisibilityInverseConverter}}">
+                        Visibility="{Binding Service.ReplaceService, Converter={cnvt:EqualToVisibilityInverseConverter}}">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="20" />
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <Image Source="{Binding Instance.ReplaceService.MetaData.IconPath}" />
+                            <Image Source="{Binding Service.ReplaceService.MetaData.IconPath}" />
                             <TextBlock
                                 Grid.Column="1"
                                 Margin="5,0"
@@ -179,14 +179,14 @@
                                 FontSize="{DynamicResource STControlFontSize12}"
                                 FontWeight="SemiBold"
                                 Foreground="{DynamicResource {x:Static ui:ThemeKeys.SystemFillColorCautionBrushKey}}"
-                                Text="{Binding Instance.ReplaceService.DisplayName}"
+                                Text="{Binding Service.ReplaceService.DisplayName}"
                                 TextTrimming="CharacterEllipsis"
-                                ToolTipService.ToolTip="{Binding Instance.ReplaceService.DisplayName}" />
+                                ToolTipService.ToolTip="{Binding Service.ReplaceService.DisplayName}" />
                             <control:Badge
                                 Grid.Column="2"
                                 Margin="2,0"
                                 FontSize="{DynamicResource STControlFontSize10}"
-                                IsOfficial="{Binding Instance.ReplaceService.MetaData.IsPrePlugin}" />
+                                IsOfficial="{Binding Service.ReplaceService.MetaData.IsPrePlugin}" />
                         </Grid>
                     </ui:ElevationBorder>
                     <ui:ElevationBorder
@@ -201,7 +201,7 @@
                         BorderBrush="{DynamicResource ControlElevationBorderBrush}"
                         BorderThickness="1"
                         CornerRadius="5"
-                        Visibility="{Binding Instance.ReplaceService, Converter={cnvt:EqualToVisibilityConverter}}">
+                        Visibility="{Binding Service.ReplaceService, Converter={cnvt:EqualToVisibilityConverter}}">
                         <TextBlock
                             Margin="5,0"
                             VerticalAlignment="Center"
@@ -214,7 +214,7 @@
                         Command="{Binding DeactiveReplaceCommand}"
                         FontSize="{DynamicResource STControlFontSize8}"
                         Icon="{x:Static ui:FluentSystemIcons.Delete_20_Regular}"
-                        Visibility="{Binding Instance.ReplaceService, Converter={cnvt:EqualToVisibilityInverseConverter}}" />
+                        Visibility="{Binding Service.ReplaceService, Converter={cnvt:EqualToVisibilityInverseConverter}}" />
                 </Grid>
             </Grid>
         </DockPanel>
@@ -242,9 +242,9 @@
                     ActiveReplaceCommand="{Binding ActiveReplaceCommand}"
                     DeleteCommand="{Binding DeleteCommand}"
                     DuplicateCommand="{Binding DuplicateCommand}"
-                    ImTranService="{Binding Instance.ImageTranslateService}"
-                    ItemsSource="{Binding Instance.Services}"
-                    ReplaceService="{Binding Instance.ReplaceService}"
+                    ImTranService="{Binding Service.ImageTranslateService}"
+                    ItemsSource="{Binding Service.Services}"
+                    ReplaceService="{Binding Service.ReplaceService}"
                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                     ScrollViewer.VerticalScrollBarVisibility="Auto"
                     SelectedItem="{Binding SelectedItem, Mode=TwoWay}" />

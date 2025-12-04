@@ -49,7 +49,7 @@
                     dd:DragDrop.UseDefaultDragAdorner="True"
                     DeleteCommand="{Binding DeleteCommand}"
                     DuplicateCommand="{Binding DuplicateCommand}"
-                    ItemsSource="{Binding Instance.Services}"
+                    ItemsSource="{Binding Service.Services}"
                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                     ScrollViewer.VerticalScrollBarVisibility="Auto"
                     SelectedItem="{Binding SelectedItem, Mode=TwoWay}" />
