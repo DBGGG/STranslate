@@ -741,7 +741,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         using var bitmap = await _screenshot.GetScreenshotAsync();
         if (bitmap == null) return;
         var window = await SingletonWindowOpener.OpenAsync<OcrWindow>();
-        ((OcrWindowViewModel)window.DataContext).QrCodeCommand.Execute(bitmap);
+        ((OcrWindowViewModel)window.DataContext).QrCode(bitmap);
     }
 
     [RelayCommand(IncludeCancelCommand = true)]
