@@ -42,6 +42,8 @@
     <sys:String x:Key="General_IgnoreHotkeysOnFullscreen">Ignore Hotkeys in Fullscreen Mode</sys:String>
     <sys:String x:Key="General_IgnoreHotkeysOnFullscreenDescription">Lower priority than "Disable Global Hotkeys", usually used in gaming scenarios.</sys:String>
     <sys:String x:Key="General_LanguageDetector">Language Detector</sys:String>
+    <sys:String x:Key="General_LocalDetector">Local Detection Chinese-English Character Ratio</sys:String>
+    <sys:String x:Key="General_LocalDetectorDescription">Only applies to "Local Detection" for the proportion of English characters to total characters in Chinese-English text.</sys:String>
     <sys:String x:Key="General_DefaultSourceLanguage">Default Source Language</sys:String>
     <sys:String x:Key="General_DefaultSourceLanguageDescription">Use this language when auto detection fails.</sys:String>
     <sys:String x:Key="General_FirstLanguage">First Language</sys:String>
@@ -56,10 +58,15 @@
     <sys:String x:Key="General_LineBreakHandleTypeDescription" xml:space="preserve">Includes line break handling for word selection, screenshot translation, clipboard, and silent OCR scenarios.&#10;"Remove extra line breaks" is mainly for PDF text extraction, removing redundant line breaks and sentence breaks, but it may affect non-PDF extraction.</sys:String>
     <sys:String x:Key="General_ImageQuality">Image Quality</sys:String>
     <sys:String x:Key="General_ImageQualityDescription">Adjust the quality when processing images. Online OCR services may limit image size.</sys:String>
+    <sys:String x:Key="General_DoubleClickTrayFunction">Double-Click Tray Function</sys:String>
+    <sys:String x:Key="General_DoubleClickTrayFunctionDescription">Selecting any action other than "None" will disable the tray single-click toggle main window display function.</sys:String>
     <sys:String x:Key="General_Language">Language</sys:String>
     <sys:String x:Key="General_ScreenshotTranslateInImage">In-Image Translation</sys:String>
     <sys:String x:Key="General_ScreenshotTranslateInImageDescription">Whether to enable in-image translation during screenshot translation.</sys:String>
-    <sys:String x:Key="General_ScreenshotTranslateInImageButtonVisible">Show the In-Image Translation button on the main interface.</sys:String>
+    <sys:String x:Key="General_ScreenshotTranslateInImageButtonVisible">Display "Screenshot Translation" | "Enable/Disable In-Image Translation" button on the main interface</sys:String>
+    <sys:String x:Key="General_ScreenshotTranslateButtonToolTip" xml:space="preserve">"Mouse Click" for screenshot translation&#10;"Ctrl+Mouse Click" to enable/disable in-image translation</sys:String>
+    <sys:String x:Key="General_ShowScreenshotAuxiliaryLines">Screenshot Auxiliary Lines</sys:String>
+    <sys:String x:Key="General_ShowScreenshotAuxiliaryLinesDescription">Whether to show auxiliary lines during screenshot to help select area more accurately.</sys:String>
     <sys:String x:Key="General_HideNotifyIcon">Hide NotifyIcon</sys:String>
     <sys:String x:Key="General_ShowScreenshotItemInNotifyIconMenu">Show Screenshot Translation in Tray Menu</sys:String>
     <sys:String x:Key="General_ShowOcrItemInNotifyIconMenu">Show Text Recognition in Tray Menu</sys:String>
@@ -76,6 +83,8 @@
     <sys:String x:Key="General_ShowMouseHookDescription">Whether to display the quick enable/disable mouse word selection icon on the main interface.</sys:String>
     <sys:String x:Key="General_ShowHistoryNavigation">Show History Navigation</sys:String>
     <sys:String x:Key="General_ShowHistoryNavigationDescription">Whether to display forward/backward history translation navigation icons on the main interface.</sys:String>
+    <sys:String x:Key="General_ShowOcrButton">Show OCR Button</sys:String>
+    <sys:String x:Key="General_ShowOcrButtonDescription">Display the OCR button in the title bar of the main interface.</sys:String>
     <sys:String x:Key="General_FontSize">Font Size</sys:String>
     <sys:String x:Key="General_FontSizeDescription">Adjust font size for all elements except the right-click context menu</sys:String>
     <sys:String x:Key="General_OutputShowingControl">Output Display Control</sys:String>
@@ -148,7 +157,8 @@
     <sys:String x:Key="TransExecPinned">Pin to Language Area for Manual Execute</sys:String>
 
     <!--  // Plugin Page //  -->
-    <sys:String x:Key="AddPlugin">Add Plugin(spkg)</sys:String>
+    <sys:String x:Key="Market">Market</sys:String>
+    <sys:String x:Key="AddPlugin">Install</sys:String>
     <sys:String x:Key="PluginName">Name</sys:String>
     <sys:String x:Key="PluginAuthor">Author</sys:String>
     <sys:String x:Key="PluginType">Type</sys:String>
@@ -305,6 +315,8 @@
 
     <sys:String x:Key="Previous">Previous</sys:String>
     <sys:String x:Key="Next">Next</sys:String>
+
+    <sys:String x:Key="Document">Document</sys:String>
 
     <!--  // Input Control //  -->
     <sys:String x:Key="RemoveLineBreak">Remove Line Break</sys:String>
@@ -486,6 +498,15 @@
     <sys:String x:Key="ImageQualityMedium">Medium</sys:String>
     <sys:String x:Key="ImageQualityHigh">High</sys:String>
 
+    <sys:String x:Key="DoubleClickTrayFunctionNone">None</sys:String>
+    <sys:String x:Key="DoubleClickTrayFunctionInputTranslate">InputTranslate</sys:String>
+    <sys:String x:Key="DoubleClickTrayFunctionScreenshotTranslate">ScreenshotTranslate</sys:String>
+    <sys:String x:Key="DoubleClickTrayFunctionOCR">OCR</sys:String>
+    <sys:String x:Key="DoubleClickTrayFunctionOpenSettingsWindow">OpenSettingsWindow</sys:String>
+    <sys:String x:Key="DoubleClickTrayFunctionToggleMouseHook">ToggleMouseHook</sys:String>
+    <sys:String x:Key="DoubleClickTrayFunctionToggleGlobalHotkeys">ToggleGlobalHotkeys</sys:String>
+    <sys:String x:Key="DoubleClickTrayFunctionExit">Exit</sys:String>
+
     <!--  // Plugins //  -->
     <sys:String x:Key="UnsupportedSourceLang">Unsupported source language</sys:String>
     <sys:String x:Key="UnsupportedTargetLang">Unsupported target language</sys:String>
@@ -533,6 +554,7 @@
     <sys:String x:Key="ThirdPersonSingular">Third Person Singular</sys:String>
     <sys:String x:Key="Comparative">Comparative</sys:String>
     <sys:String x:Key="Superlative">Superlative</sys:String>
+    <sys:String x:Key="Tag">Tag</sys:String>
 
     <!--  // OCR Window //  -->
     <sys:String x:Key="SelectAll">Select All</sys:String>
@@ -595,4 +617,19 @@
     <sys:String x:Key="UpdateFailed">Update Failed</sys:String>
     <sys:String x:Key="UpdateFailedMessage">Failed to update the application. Please check your connection.</sys:String>
     <sys:String x:Key="NewVersionTips">New version {0} is available, would you like to restart STranslate to use the update?</sys:String>
+
+    <!--  // LLM Service Configurations for plugins //  -->
+    <sys:String x:Key="Url">API Endpoint</sys:String>
+    <sys:String x:Key="Url_Description">Using '#' at the end forces the use of the entered address.</sys:String>
+    <sys:String x:Key="Url_ToolTip">Complete URL for final request</sys:String>
+    <sys:String x:Key="ApiKey">API Key</sys:String>
+    <sys:String x:Key="ApiKey_Suggestion">Please enter API Key</sys:String>
+    <sys:String x:Key="Model">Select Model</sys:String>
+    <sys:String x:Key="Prompt_Header">Prompt Configuration</sys:String>
+    <sys:String x:Key="Prompt_Description">Select or edit the prompt template used for translation</sys:String>
+    <sys:String x:Key="Prompt_Placeholder">Select prompt template</sys:String>
+    <sys:String x:Key="EditPrompt_ToolTip">Edit Prompt</sys:String>
+    <sys:String x:Key="EditPrompt_Content">Edit</sys:String>
+    <sys:String x:Key="Temperature">Temperature Control</sys:String>
+    <sys:String x:Key="Temperature_Description">Controls the randomness of the model's output</sys:String>
 </ResourceDictionary>

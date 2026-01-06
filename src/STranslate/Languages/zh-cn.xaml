@@ -42,6 +42,8 @@
     <sys:String x:Key="General_IgnoreHotkeysOnFullscreen">全屏模式下忽略热键</sys:String>
     <sys:String x:Key="General_IgnoreHotkeysOnFullscreenDescription">优先级低于「禁用全局热键」一般用于游戏场景</sys:String>
     <sys:String x:Key="General_LanguageDetector">语言检测器</sys:String>
+    <sys:String x:Key="General_LocalDetector">本地识别中英字符比例</sys:String>
+    <sys:String x:Key="General_LocalDetectorDescription">仅针对「本地识别」中英文情况下英文字符占总字符数的比例</sys:String>
     <sys:String x:Key="General_DefaultSourceLanguage">默认源语言</sys:String>
     <sys:String x:Key="General_DefaultSourceLanguageDescription">当自动检测失败时使用此语言。</sys:String>
     <sys:String x:Key="General_FirstLanguage">第一语言</sys:String>
@@ -53,13 +55,18 @@
     <sys:String x:Key="General_TranslateOnPaste">粘贴立即翻译</sys:String>
     <sys:String x:Key="General_TranslateOnPasteDescription">输入框内粘贴文本立即执行翻译。</sys:String>
     <sys:String x:Key="General_LineBreakHandleType">取词换行处理</sys:String>
-    <sys:String x:Key="General_LineBreakHandleTypeDescription" xml:space="preserve">包括划词、截图翻译、剪贴板、静默OCR取词场最的换行处理&#10;「移除多余换行」主要针对PDF取词场景，移除多余换行和断句，但是对非PDF取词可能有影响</sys:String>
+    <sys:String x:Key="General_LineBreakHandleTypeDescription" xml:space="preserve">包括划词、截图翻译、剪贴板、静默OCR取词场景的换行处理&#10;「移除多余换行」主要针对PDF取词场景，移除多余换行和断句，但是对非PDF取词可能有影响</sys:String>
     <sys:String x:Key="General_ImageQuality">图片质量</sys:String>
     <sys:String x:Key="General_ImageQualityDescription">处理图片时质量调整，在线OCR服务可能会限制图片大小</sys:String>
+    <sys:String x:Key="General_DoubleClickTrayFunction">双击托盘程序功能</sys:String>
+    <sys:String x:Key="General_DoubleClickTrayFunctionDescription">选择除「无操作」的其他操作会禁用托盘单击切换主窗口显示功能</sys:String>
     <sys:String x:Key="General_Language">语言</sys:String>
     <sys:String x:Key="General_ScreenshotTranslateInImage">图片内翻译</sys:String>
-    <sys:String x:Key="General_ScreenshotTranslateInImageDescription">截图翻译时是否启用图片内翻译.</sys:String>
-    <sys:String x:Key="General_ScreenshotTranslateInImageButtonVisible">在主界面上显示启用图片内翻译按钮</sys:String>
+    <sys:String x:Key="General_ScreenshotTranslateInImageDescription">截图翻译时是否启用图片内翻译</sys:String>
+    <sys:String x:Key="General_ScreenshotTranslateInImageButtonVisible">在主界面上显示「截图翻译」|「启用/禁用图片内翻译」按钮</sys:String>
+    <sys:String x:Key="General_ScreenshotTranslateButtonToolTip" xml:space="preserve">「鼠标点击」截图翻译&#10;「Ctrl+鼠标点击」开启/关闭图片内翻译</sys:String>
+    <sys:String x:Key="General_ShowScreenshotAuxiliaryLines">截图辅助线</sys:String>
+    <sys:String x:Key="General_ShowScreenshotAuxiliaryLinesDescription">截图时是否显示辅助线，帮助更精确地选择区域。</sys:String>
     <sys:String x:Key="General_HideNotifyIcon">隐藏托盘图标</sys:String>
     <sys:String x:Key="General_ShowScreenshotItemInNotifyIconMenu">托盘显示截图翻译选项</sys:String>
     <sys:String x:Key="General_ShowOcrItemInNotifyIconMenu">托盘显示文本识别选项</sys:String>
@@ -76,6 +83,8 @@
     <sys:String x:Key="General_ShowMouseHookDescription">主界面是否显示快捷启用/禁用监听鼠标划词图标。</sys:String>
     <sys:String x:Key="General_ShowHistoryNavigation">显示历史导航</sys:String>
     <sys:String x:Key="General_ShowHistoryNavigationDescription">主界面是否显示向前/向后历史翻译记录导航图标。</sys:String>
+    <sys:String x:Key="General_ShowOcrButton">显示OCR按钮</sys:String>
+    <sys:String x:Key="General_ShowOcrButtonDescription">在主界面标题栏显示OCR按钮。</sys:String>
     <sys:String x:Key="General_FontSize">字体大小</sys:String>
     <sys:String x:Key="General_FontSizeDescription">调整除「右键菜单」外的所有字体大小</sys:String>
     <sys:String x:Key="General_OutputShowingControl">输出控件显示控制</sys:String>
@@ -148,7 +157,8 @@
     <sys:String x:Key="TransExecPinned">钉到语言区手动执行</sys:String>
 
     <!--  // Plugin Page //  -->
-    <sys:String x:Key="AddPlugin">添加插件「spkg」</sys:String>
+    <sys:String x:Key="Market">市场</sys:String>
+    <sys:String x:Key="AddPlugin">安装</sys:String>
     <sys:String x:Key="PluginName">名称</sys:String>
     <sys:String x:Key="PluginAuthor">作者</sys:String>
     <sys:String x:Key="PluginType">类型</sys:String>
@@ -305,6 +315,8 @@
 
     <sys:String x:Key="Previous">上一个</sys:String>
     <sys:String x:Key="Next">下一个</sys:String>
+
+    <sys:String x:Key="Document">文档</sys:String>
 
     <!--  // Input Control //  -->
     <sys:String x:Key="RemoveLineBreak">移除换行</sys:String>
@@ -487,6 +499,15 @@
     <sys:String x:Key="ImageQualityMedium">中等质量</sys:String>
     <sys:String x:Key="ImageQualityHigh">高质量</sys:String>
 
+    <sys:String x:Key="DoubleClickTrayFunctionNone">无操作</sys:String>
+    <sys:String x:Key="DoubleClickTrayFunctionInputTranslate">输入翻译</sys:String>
+    <sys:String x:Key="DoubleClickTrayFunctionScreenshotTranslate">截图翻译</sys:String>
+    <sys:String x:Key="DoubleClickTrayFunctionOCR">文本识别</sys:String>
+    <sys:String x:Key="DoubleClickTrayFunctionOpenSettingsWindow">打开设置窗口</sys:String>
+    <sys:String x:Key="DoubleClickTrayFunctionToggleMouseHook">切换鼠标取词</sys:String>
+    <sys:String x:Key="DoubleClickTrayFunctionToggleGlobalHotkeys">切换全局快捷键</sys:String>
+    <sys:String x:Key="DoubleClickTrayFunctionExit">退出程序</sys:String>
+
     <!--  // Plugins //  -->
     <sys:String x:Key="UnsupportedSourceLang">不支持的源语言</sys:String>
     <sys:String x:Key="UnsupportedTargetLang">不支持的目标语言</sys:String>
@@ -534,6 +555,7 @@
     <sys:String x:Key="ThirdPersonSingular">第三人称单数</sys:String>
     <sys:String x:Key="Comparative">比较级</sys:String>
     <sys:String x:Key="Superlative">最高级</sys:String>
+    <sys:String x:Key="Tag">标签</sys:String>
 
     <!--  // OCR Window //  -->
     <sys:String x:Key="SelectAll">全选</sys:String>
@@ -596,4 +618,19 @@
     <sys:String x:Key="UpdateFailed">更新失败</sys:String>
     <sys:String x:Key="UpdateFailedMessage">应用程序更新失败。请检查您的网络连接。</sys:String>
     <sys:String x:Key="NewVersionTips">新版本 {0} 已可用，是否重新启动 STranslate 以使用更新？</sys:String>
+
+    <!--  // LLM Service Configurations for plugins //  -->
+    <sys:String x:Key="Url">接口</sys:String>
+    <sys:String x:Key="Url_Description">以「#」结尾强制使用输入地址</sys:String>
+    <sys:String x:Key="Url_ToolTip">最终请求的完整 URL</sys:String>
+    <sys:String x:Key="ApiKey">密钥</sys:String>
+    <sys:String x:Key="ApiKey_Suggestion">请输入密钥</sys:String>
+    <sys:String x:Key="Model">请选择模型</sys:String>
+    <sys:String x:Key="Prompt_Header">提示词配置</sys:String>
+    <sys:String x:Key="Prompt_Description">选择或编辑翻译使用的提示词模板</sys:String>
+    <sys:String x:Key="Prompt_Placeholder">选择提示词模板</sys:String>
+    <sys:String x:Key="EditPrompt_ToolTip">编辑提示词</sys:String>
+    <sys:String x:Key="EditPrompt_Content">编辑</sys:String>
+    <sys:String x:Key="Temperature">温度控制</sys:String>
+    <sys:String x:Key="Temperature_Description">控制着模型输出的随机性</sys:String>
 </ResourceDictionary>

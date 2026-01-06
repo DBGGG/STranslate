@@ -124,6 +124,18 @@ public class HeaderControl : Control
                 true,
                 FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
 
+    public ICommand? ScreenshotTranslateCommand
+    {
+        get => (ICommand?)GetValue(ScreenshotTranslateCommandProperty);
+        set => SetValue(ScreenshotTranslateCommandProperty, value);
+    }
+
+    public static readonly DependencyProperty ScreenshotTranslateCommandProperty =
+        DependencyProperty.Register(
+            nameof(ScreenshotTranslateCommand),
+            typeof(ICommand),
+            typeof(HeaderControl));
+
     #endregion
 
     #region ColorScheme
@@ -229,6 +241,37 @@ public class HeaderControl : Control
     public static readonly DependencyProperty HistoryNextCommandProperty =
         DependencyProperty.Register(
             nameof(HistoryNextCommand),
+            typeof(ICommand),
+            typeof(HeaderControl));
+
+    #endregion
+
+    #region OCR
+
+    public bool IsOcrVisible
+    {
+        get => (bool)GetValue(IsOcrVisibleProperty);
+        set => SetValue(IsOcrVisibleProperty, value);
+    }
+
+    public static readonly DependencyProperty IsOcrVisibleProperty =
+        DependencyProperty.Register(
+            nameof(IsOcrVisible),
+            typeof(bool),
+            typeof(HeaderControl),
+            new FrameworkPropertyMetadata(
+                true,
+                FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
+
+    public ICommand? OcrCommand
+    {
+        get => (ICommand?)GetValue(OcrCommandProperty);
+        set => SetValue(OcrCommandProperty, value);
+    }
+
+    public static readonly DependencyProperty OcrCommandProperty =
+        DependencyProperty.Register(
+            nameof(OcrCommand),
             typeof(ICommand),
             typeof(HeaderControl));
 

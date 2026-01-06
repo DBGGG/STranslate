@@ -42,6 +42,8 @@
     <sys:String x:Key="General_IgnoreHotkeysOnFullscreen">全螢幕模式下忽略快捷鍵</sys:String>
     <sys:String x:Key="General_IgnoreHotkeysOnFullscreenDescription">優先順序低於「停用全域快捷鍵」，一般用於遊戲場景。</sys:String>
     <sys:String x:Key="General_LanguageDetector">語言檢測器</sys:String>
+    <sys:String x:Key="General_LocalDetector">本地識別中英字元比例</sys:String>
+    <sys:String x:Key="General_LocalDetectorDescription">僅針對「本地識別」中英文情況下英文字元佔總字元數的比例。</sys:String>
     <sys:String x:Key="General_DefaultSourceLanguage">預設來源語言</sys:String>
     <sys:String x:Key="General_DefaultSourceLanguageDescription">當自動檢測失敗時使用此語言。</sys:String>
     <sys:String x:Key="General_FirstLanguage">第一語言</sys:String>
@@ -56,10 +58,15 @@
     <sys:String x:Key="General_LineBreakHandleTypeDescription" xml:space="preserve">包括劃詞、截圖翻譯、剪貼簿、靜默 OCR 取詞場景的換行處理。&#10;「移除多餘換行」主要針對 PDF 取詞場景，移除多餘的換行與斷句，但對非 PDF 取詞可能會有影響。</sys:String>
     <sys:String x:Key="General_ImageQuality">圖片品質</sys:String>
     <sys:String x:Key="General_ImageQualityDescription">處理圖片時調整品質，線上OCR服務可能會限制圖片大小。</sys:String>
+    <sys:String x:Key="General_DoubleClickTrayFunction">雙擊托盤功能</sys:String>
+    <sys:String x:Key="General_DoubleClickTrayFunctionDescription">選擇除「無操作」的其他操作會停用托盤單擊切換主視窗顯示功能。</sys:String>
     <sys:String x:Key="General_Language">語言</sys:String>
     <sys:String x:Key="General_ScreenshotTranslateInImage">圖片內翻譯</sys:String>
     <sys:String x:Key="General_ScreenshotTranslateInImageDescription">截圖翻譯時是否啟用圖片內翻譯。</sys:String>
-    <sys:String x:Key="General_ScreenshotTranslateInImageButtonVisible">在主界面顯示啟用圖片內翻譯按鈕。</sys:String>
+    <sys:String x:Key="General_ScreenshotTranslateInImageButtonVisible">在主介面上顯示「螢幕擷取翻譯」|「啟用/停用圖片內翻譯」按鈕</sys:String>
+    <sys:String x:Key="General_ScreenshotTranslateButtonToolTip" xml:space="preserve">「滑鼠點擊」螢幕擷取翻譯&#10;「Ctrl+滑鼠點擊」開啟/關閉圖片內翻譯</sys:String>
+    <sys:String x:Key="General_ShowScreenshotAuxiliaryLines">截圖輔助線</sys:String>
+    <sys:String x:Key="General_ShowScreenshotAuxiliaryLinesDescription">截圖時是否顯示輔助線，幫助更精確地選擇區域。</sys:String>
     <sys:String x:Key="General_HideNotifyIcon">隱藏托盤圖示</sys:String>
     <sys:String x:Key="General_ShowScreenshotItemInNotifyIconMenu">托盤顯示截圖翻譯選項</sys:String>
     <sys:String x:Key="General_ShowOcrItemInNotifyIconMenu">托盤顯示文字識別選項</sys:String>
@@ -76,6 +83,8 @@
     <sys:String x:Key="General_ShowMouseHookDescription">主介面是否顯示快捷啟用/禁用監聽滑鼠劃詞圖示。</sys:String>
     <sys:String x:Key="General_ShowHistoryNavigation">顯示歷史導航</sys:String>
     <sys:String x:Key="General_ShowHistoryNavigationDescription">主介面是否顯示向前/向後歷史翻譯記錄導航圖示。</sys:String>
+    <sys:String x:Key="General_ShowOcrButton">顯示OCR按鈕</sys:String>
+    <sys:String x:Key="General_ShowOcrButtonDescription">在主介面標題欄顯示OCR按鈕。</sys:String>
     <sys:String x:Key="General_FontSize">字體大小</sys:String>
     <sys:String x:Key="General_FontSizeDescription">調整除「右鍵選單」外的所有字型大小</sys:String>
     <sys:String x:Key="General_OutputShowingControl">輸出控件顯示控制</sys:String>
@@ -148,7 +157,8 @@
     <sys:String x:Key="TransExecPinned">釘到語言區手動執行</sys:String>
 
     <!--  // Plugin Page //  -->
-    <sys:String x:Key="AddPlugin">新增外掛「spkg」</sys:String>
+    <sys:String x:Key="Market">市場</sys:String>
+    <sys:String x:Key="AddPlugin">安裝</sys:String>
     <sys:String x:Key="PluginName">名稱</sys:String>
     <sys:String x:Key="PluginAuthor">作者</sys:String>
     <sys:String x:Key="PluginType">類型</sys:String>
@@ -305,6 +315,8 @@
 
     <sys:String x:Key="Previous">上一個</sys:String>
     <sys:String x:Key="Next">下一個</sys:String>
+
+    <sys:String x:Key="Document">文件</sys:String>
 
     <!--  // Input Control //  -->
     <sys:String x:Key="RemoveLineBreak">移除換行</sys:String>
@@ -487,6 +499,15 @@
     <sys:String x:Key="ImageQualityMedium">中等品質</sys:String>
     <sys:String x:Key="ImageQualityHigh">高品質</sys:String>
 
+    <sys:String x:Key="DoubleClickTrayFunctionNone">無操作</sys:String>
+    <sys:String x:Key="DoubleClickTrayFunctionInputTranslate">輸入翻譯</sys:String>
+    <sys:String x:Key="DoubleClickTrayFunctionScreenshotTranslate">螢幕擷取翻譯</sys:String>
+    <sys:String x:Key="DoubleClickTrayFunctionOCR">文本識別</sys:String>
+    <sys:String x:Key="DoubleClickTrayFunctionOpenSettingsWindow">開啟設定視窗</sys:String>
+    <sys:String x:Key="DoubleClickTrayFunctionToggleMouseHook">切換滑鼠取詞</sys:String>
+    <sys:String x:Key="DoubleClickTrayFunctionToggleGlobalHotkeys">切換全域快速鍵</sys:String>
+    <sys:String x:Key="DoubleClickTrayFunctionExit">退出程式</sys:String>
+
     <!--  // Plugins //  -->
     <sys:String x:Key="UnsupportedSourceLang">不支援的來源語言</sys:String>
     <sys:String x:Key="UnsupportedTargetLang">不支援的目標語言</sys:String>
@@ -534,6 +555,7 @@
     <sys:String x:Key="ThirdPersonSingular">第三人稱單數</sys:String>
     <sys:String x:Key="Comparative">比較級</sys:String>
     <sys:String x:Key="Superlative">最高級</sys:String>
+    <sys:String x:Key="Tag">標籤</sys:String>
 
     <!--  // OCR Window //  -->
     <sys:String x:Key="SelectAll">全選</sys:String>
@@ -596,4 +618,19 @@
     <sys:String x:Key="UpdateFailed">更新失敗</sys:String>
     <sys:String x:Key="UpdateFailedMessage">應用程式更新失敗。請檢查您的網路連接。</sys:String>
     <sys:String x:Key="NewVersionTips">新版本 {0} 已可用，是否重新啟動 STranslate 以使用更新？</sys:String>
+
+    <!--  // LLM Service Configurations for plugins //  -->
+    <sys:String x:Key="Url">API 介面</sys:String>
+    <sys:String x:Key="Url_Description">以「#」結尾強制使用輸入位址</sys:String>
+    <sys:String x:Key="Url_ToolTip">最終請求的完整 URL</sys:String>
+    <sys:String x:Key="ApiKey">API 金鑰</sys:String>
+    <sys:String x:Key="ApiKey_Suggestion">請輸入 API 金鑰</sys:String>
+    <sys:String x:Key="Model">請選擇模型</sys:String>
+    <sys:String x:Key="Prompt_Header">提示詞配置</sys:String>
+    <sys:String x:Key="Prompt_Description">選擇或編輯翻譯使用的提示詞模板</sys:String>
+    <sys:String x:Key="Prompt_Placeholder">選擇提示詞模板</sys:String>
+    <sys:String x:Key="EditPrompt_ToolTip">編輯提示詞</sys:String>
+    <sys:String x:Key="EditPrompt_Content">編輯</sys:String>
+    <sys:String x:Key="Temperature">溫度控制</sys:String>
+    <sys:String x:Key="Temperature_Description">控制著模型輸出的隨機性</sys:String>
 </ResourceDictionary>

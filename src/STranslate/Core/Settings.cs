@@ -52,6 +52,11 @@ public partial class Settings : ObservableObject
 
     [ObservableProperty] public partial bool IsScreenshotTranslateInImageVisible { get; set; } = true;
 
+    /// <summary>
+    /// 截图时是否显示辅助线
+    /// </summary>
+    [ObservableProperty] public partial bool ShowScreenshotAuxiliaryLines { get; set; } = true;
+
     [ObservableProperty] public partial bool HideInput { get; set; } = false;
 
     [ObservableProperty] public partial bool HideInputWithLangSelectControl { get; set; } = false;
@@ -61,6 +66,10 @@ public partial class Settings : ObservableObject
     [ObservableProperty] public partial bool IsMouseHookVisible { get; set; } = true;
 
     [ObservableProperty] public partial bool IsHistoryNavigationVisible { get; set; } = true;
+
+    [ObservableProperty] public partial bool IsOcrVisible { get; set; } = true;
+
+    [ObservableProperty] public partial DoubleClickTrayFunction DoubleClickTrayFunction { get; set; }
 
     [ObservableProperty] public partial CopyAfterTranslation CopyAfterTranslation { get; set; }
 
@@ -78,6 +87,11 @@ public partial class Settings : ObservableObject
     ///     语种识别类型
     /// </summary>
     [ObservableProperty] public partial LanguageDetectorType LanguageDetector { get; set; } = LanguageDetectorType.Local;
+
+    /// <summary>
+    /// 本地识别英文比例阈值
+    /// </summary>
+    [ObservableProperty] public partial double LocalDetectorRate { get; set; } = 0.8;
 
     /// <summary>
     ///     原始语言识别为自动时使用该配置
@@ -420,6 +434,9 @@ public partial class Settings : ObservableObject
             case nameof(IgnoreHotkeysOnFullscreen):
                 Ioc.Default.GetRequiredService<HotkeySettings>().ApplyIgnoreOnFullScreen();
                 break;
+            case nameof(LocalDetectorRate):
+                LocalDetectorRate = Math.Round(LocalDetectorRate, 2);
+                break;
             default:
                 break;
         }
@@ -512,21 +529,20 @@ public partial class Settings : ObservableObject
 
     private void ApplyTheme()
     {
-        ThemeManager.SetRequestedTheme(App.Current.MainWindow, ColorScheme);
-        var window = App.Current.Windows.OfType<SettingsWindow>().FirstOrDefault();
-        if (window != null)
+        // 遍历所有窗口统一应用主题
+        foreach (System.Windows.Window window in App.Current.Windows)
         {
             ThemeManager.SetRequestedTheme(window, ColorScheme);
         }
-        var promptWindow = App.Current.Windows.OfType<PromptEditWindow>().FirstOrDefault();
-        if (promptWindow != null)
+
+        // 为 TaskbarIcon 的 ContextMenu 应用主题
+        if (App.Current.MainWindow is MainWindow mainWindow)
         {
-            ThemeManager.SetRequestedTheme(promptWindow, ColorScheme);
-        }
-        var ocrWindow = App.Current.Windows.OfType<OcrWindow>().FirstOrDefault();
-        if (ocrWindow != null)
-        {
-            ThemeManager.SetRequestedTheme(ocrWindow, ColorScheme);
+            var notifyIcon = mainWindow.FindName("PART_NotifyIcon") as Hardcodet.Wpf.TaskbarNotification.TaskbarIcon;
+            if (notifyIcon?.ContextMenu != null)
+            {
+                ThemeManager.SetRequestedTheme(notifyIcon.ContextMenu, ColorScheme);
+            }
         }
     }
 
@@ -655,6 +671,18 @@ public enum CopyAfterTranslation
     Seventh,
     Eighth,
     Last,
+}
+
+public enum DoubleClickTrayFunction
+{
+    None,
+    InputTranslate,
+    ScreenshotTranslate,
+    OCR,
+    OpenSettingsWindow,
+    ToggleMouseHook,
+    ToggleGlobalHotkeys,
+    Exit
 }
 
 #endregion

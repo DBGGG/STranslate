@@ -97,8 +97,11 @@
             IsHistoryNavigationVisible="{Binding Settings.IsHistoryNavigationVisible}"
             IsMouseHook="{Binding IsMouseHook}"
             IsMouseHookVisible="{Binding Settings.IsMouseHookVisible}"
+            IsOcrVisible="{Binding Settings.IsOcrVisible}"
             IsScreenshotTranslateInImageVisible="{Binding Settings.IsScreenshotTranslateInImageVisible}"
             IsTopmost="{Binding IsTopmost}"
+            OcrCommand="{Binding OcrCommand}"
+            ScreenshotTranslateCommand="{Binding ScreenshotTranslateCommand}"
             ScreenshotTranslateInImage="{Binding Settings.ScreenshotTranslateInImage}"
             SettingCommand="{Binding OpenSettingsCommand}" />
 
@@ -265,8 +268,9 @@
 
         <tb:TaskbarIcon
             x:Name="PART_NotifyIcon"
+            DoubleClickCommand="{Binding DoubleClickCommand}"
             IconSource="{Binding TrayIcon}"
-            LeftClickCommand="{Binding ToggleAppCommand}"
+            LeftClickCommand="{Binding LeftClickCommand}"
             NoLeftClickDelay="True"
             ToolTipText="{Binding TrayToolTip}"
             Visibility="{Binding Settings.HideNotifyIcon, Converter={cnvt:BoolToVisibilityInverseConverter}}">
@@ -274,7 +278,7 @@
                 <s:BindingProxy x:Key="ViewModel" Data="{Binding}" />
             </tb:TaskbarIcon.Resources>
             <tb:TaskbarIcon.ContextMenu>
-                <ContextMenu Style="{DynamicResource DefaultContextMenuStyle}">
+                <ContextMenu>
                     <MenuItem Command="{Binding Source={StaticResource ViewModel}, Path=Data.ToggleAppCommand}">
                         <MenuItem.Header>
                             <Grid>

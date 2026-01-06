@@ -5,14 +5,15 @@ using iNKORE.UI.WPF.Modern;
 using Microsoft.Extensions.Logging;
 using STranslate.Core;
 using STranslate.Helpers;
-using STranslate.Services;
 using STranslate.Plugin;
 using STranslate.Resources;
+using STranslate.Services;
 using STranslate.ViewModels.Pages;
 using STranslate.Views;
 using STranslate.Views.Pages;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 
@@ -739,6 +740,11 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             return;
 
         using var bitmap = await _screenshot.GetScreenshotAsync();
+        await QrCodeHandlerAsync(bitmap);
+    }
+
+    public async Task QrCodeHandlerAsync(System.Drawing.Bitmap? bitmap)
+    {
         if (bitmap == null) return;
         var window = await SingletonWindowOpener.OpenAsync<OcrWindow>();
         ((OcrWindowViewModel)window.DataContext).QrCode(bitmap);
@@ -1089,11 +1095,57 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         }
         MainWindow.Visibility = Visibility.Visible;
         UpdatePosition();
+
+        Win32Helper.SetForegroundWindow(MainWindow);
+
         MainWindow.Activate();
+
         MainWindow.PART_Input.Focus();
+        Keyboard.Focus(MainWindow.PART_Input);
     }
 
     public void Hide() => MainWindow.Visibility = Visibility.Collapsed;
+
+    [RelayCommand]
+    private void DoubleClick()
+    {
+        switch (Settings.DoubleClickTrayFunction)
+        {
+            case DoubleClickTrayFunction.InputTranslate:
+                InputClear();
+                break;
+            case DoubleClickTrayFunction.ScreenshotTranslate:
+                ScreenshotTranslateCommand.Execute(null);
+                break;
+            case DoubleClickTrayFunction.OCR:
+                OcrCommand.Execute(null);
+                break;
+            case DoubleClickTrayFunction.OpenSettingsWindow:
+                OpenSettingsCommand.Execute(null);
+                break;
+            case DoubleClickTrayFunction.ToggleMouseHook:
+                ToggleMouseHookTranslateCommand.Execute(null);
+                break;
+            case DoubleClickTrayFunction.ToggleGlobalHotkeys:
+                ToggleGlobalHotkey();
+                break;
+            case DoubleClickTrayFunction.Exit:
+                Exit();
+                break;
+            default:
+                break;
+        }
+    }
+
+    [RelayCommand]
+    private void LeftClick()
+    {
+        // 开启后单击托盘功能禁用
+        if (Settings.DoubleClickTrayFunction != DoubleClickTrayFunction.None)
+            return;
+
+        ToggleApp();
+    }
 
     [RelayCommand]
     private void ToggleApp()
@@ -1118,6 +1170,16 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private async Task OpenSettingsAsync(object? parameter)
     {
+        await OpenSettingsInternalAsync(parameter);
+
+        Application.Current.Windows
+                    .OfType<SettingsWindow>()
+                    .First()
+                    .Navigate(nameof(GeneralPage));
+    }
+
+    internal async Task OpenSettingsInternalAsync(object? parameter)
+    {
         // 如果由 ContextMenu 触发，等待关闭动画完成
         if (parameter is not null)
             await Task.Delay(ContextMenuCloseAnimationDelay);
@@ -1132,7 +1194,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private async Task OpenHistoryAsync()
     {
-        await OpenSettingsAsync(null);
+        await OpenSettingsInternalAsync(null);
         Application.Current.Windows
                     .OfType<SettingsWindow>()
                     .First()
@@ -1142,7 +1204,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private async Task NavigateAsync(Service service)
     {
-        await OpenSettingsAsync(string.Empty);
+        await OpenSettingsInternalAsync(string.Empty);
         await Application.Current.Dispatcher.InvokeAsync(() =>
         {
             Application.Current.Windows

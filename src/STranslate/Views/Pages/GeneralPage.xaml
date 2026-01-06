@@ -141,6 +141,22 @@
                         SelectedValuePath="Value" />
 
                     <ui:SettingsExpander.Items>
+                        <ui:SettingsCard
+                            Description="{DynamicResource General_LocalDetectorDescription}"
+                            Header="{DynamicResource General_LocalDetector}"
+                            Visibility="{Binding Settings.LanguageDetector, Converter={cnvt:LanguageDetectorTypeVisibilityConverter}, ConverterParameter=Local}">
+                            <ikw:SimpleStackPanel Orientation="Horizontal" Spacing="12">
+                                <Slider
+                                    x:Name="PART_DetectorRate"
+                                    IsSnapToTickEnabled="True"
+                                    Maximum="0.99"
+                                    Minimum="0.01"
+                                    TickFrequency="0.01"
+                                    Value="{Binding Settings.LocalDetectorRate}" />
+                                <TextBlock VerticalAlignment="Center" Text="{Binding ElementName=PART_DetectorRate, Path=Value, StringFormat={}{0:0.00}}" />
+                            </ikw:SimpleStackPanel>
+                        </ui:SettingsCard>
+
                         <ui:SettingsCard Description="{DynamicResource General_DefaultSourceLanguageDescription}" Header="{DynamicResource General_DefaultSourceLanguage}">
                             <ComboBox
                                 DisplayMemberPath="Display"
@@ -167,7 +183,13 @@
                     </ui:SettingsExpander.Items>
                 </ui:SettingsExpander>
 
-                <ui:SettingsExpander Description="{DynamicResource General_ScreenshotTranslateInImageDescription}" Header="{DynamicResource General_ScreenshotTranslateInImage}">
+                <ui:SettingsExpander Header="{DynamicResource General_ScreenshotTranslateInImage}">
+                    <ui:SettingsExpander.Description>
+                        <WrapPanel Orientation="Horizontal">
+                            <TextBlock VerticalAlignment="Bottom" Text="{DynamicResource General_ScreenshotTranslateInImageDescription}" />
+                            <ui:HyperlinkButton Content="{DynamicResource Document}" NavigateUri="https://stranslate.zggsong.com/docs/#%E5%9B%BE%E7%89%87%E7%BF%BB%E8%AF%91" />
+                        </WrapPanel>
+                    </ui:SettingsExpander.Description>
                     <ui:SettingsExpander.HeaderIcon>
                         <ui:FontIcon Icon="{x:Static ui:FluentSystemIcons.DrawImage_20_Regular}" />
                     </ui:SettingsExpander.HeaderIcon>
@@ -176,10 +198,7 @@
                         OffContent="{DynamicResource Disable}"
                         OnContent="{DynamicResource Enable}" />
                     <ui:SettingsExpander.Items>
-                        <ui:SettingsCard>
-                            <ui:SettingsCard.Header>
-                                <TextBlock Text="{DynamicResource General_ScreenshotTranslateInImageButtonVisible}" />
-                            </ui:SettingsCard.Header>
+                        <ui:SettingsCard Header="{DynamicResource General_ScreenshotTranslateInImageButtonVisible}">
                             <ui:ToggleSwitch
                                 IsOn="{Binding Settings.IsScreenshotTranslateInImageVisible}"
                                 OffContent="{DynamicResource Hide}"
@@ -259,6 +278,17 @@
                         DisplayMemberPath="Display"
                         ItemsSource="{Binding DataProvider.ImageQualities}"
                         SelectedValue="{Binding Settings.ImageQuality}"
+                        SelectedValuePath="Value" />
+                </ui:SettingsCard>
+
+                <ui:SettingsCard Description="{DynamicResource General_DoubleClickTrayFunctionDescription}" Header="{DynamicResource General_DoubleClickTrayFunction}">
+                    <ui:SettingsCard.HeaderIcon>
+                        <ui:FontIcon Icon="{x:Static ui:FluentSystemIcons.CursorClick_20_Regular}" />
+                    </ui:SettingsCard.HeaderIcon>
+                    <ComboBox
+                        DisplayMemberPath="Display"
+                        ItemsSource="{Binding DataProvider.DoubleClickTrayFunctions}"
+                        SelectedValue="{Binding Settings.DoubleClickTrayFunction}"
                         SelectedValuePath="Value" />
                 </ui:SettingsCard>
 
@@ -456,6 +486,26 @@
                     </ui:SettingsCard.HeaderIcon>
                     <ui:ToggleSwitch
                         IsOn="{Binding Settings.IsHistoryNavigationVisible}"
+                        OffContent="{DynamicResource Hide}"
+                        OnContent="{DynamicResource Show}" />
+                </ui:SettingsCard>
+
+                <ui:SettingsCard Description="{DynamicResource General_ShowOcrButtonDescription}" Header="{DynamicResource General_ShowOcrButton}">
+                    <ui:SettingsCard.HeaderIcon>
+                        <ui:FontIcon Icon="{x:Static ui:FluentSystemIcons.ScanType_20_Regular}" />
+                    </ui:SettingsCard.HeaderIcon>
+                    <ui:ToggleSwitch
+                        IsOn="{Binding Settings.IsOcrVisible}"
+                        OffContent="{DynamicResource Hide}"
+                        OnContent="{DynamicResource Show}" />
+                </ui:SettingsCard>
+
+                <ui:SettingsCard Description="{DynamicResource General_ShowScreenshotAuxiliaryLinesDescription}" Header="{DynamicResource General_ShowScreenshotAuxiliaryLines}">
+                    <ui:SettingsCard.HeaderIcon>
+                        <ui:FontIcon Icon="{x:Static ui:FluentSystemIcons.LineStyle_20_Regular}" />
+                    </ui:SettingsCard.HeaderIcon>
+                    <ui:ToggleSwitch
+                        IsOn="{Binding Settings.ShowScreenshotAuxiliaryLines}"
                         OffContent="{DynamicResource Hide}"
                         OnContent="{DynamicResource Show}" />
                 </ui:SettingsCard>
