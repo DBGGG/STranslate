@@ -294,6 +294,11 @@
                     VerticalAlignment="Center"
                     Orientation="Horizontal"
                     Spacing="8">
+                    <ikw:SimpleStackPanel.Resources>
+                        <Style BasedOn="{StaticResource {x:Type Button}}" TargetType="Button">
+                            <Setter Property="Height" Value="32" />
+                        </Style>
+                    </ikw:SimpleStackPanel.Resources>
                     <ComboBox
                         MinWidth="120"
                         MaxWidth="200"
@@ -332,10 +337,6 @@
                     <Button Command="{Binding OpenSettingsCommand}" ToolTip="{DynamicResource OcrSettingsToolTip}">
                         <ui:FontIcon Icon="{x:Static ui:FluentSystemIcons.Settings_20_Regular}" />
                     </Button>
-                    <!--<Button Command="{Binding OcrCommand}" ToolTip="{DynamicResource ReOcr}">
-                        <ui:FontIcon Icon="{x:Static ui:FluentSystemIcons.Cut_20_Regular}" />
-                    </Button>-->
-
                     <Button
                         Command="{Binding OcrCommand}"
                         CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}"
@@ -544,6 +545,7 @@
         <Border
             x:Name="PART_LoadingMask"
             Margin="0,48,0,0"
+            d:Visibility="Collapsed"
             Background="#B0000000"
             IsHitTestVisible="{Binding IsExecuting}"
             Visibility="{Binding IsExecuting, Converter={cnvt:BoolToVisibilityConverter}}">

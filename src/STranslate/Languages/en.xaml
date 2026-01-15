@@ -579,6 +579,7 @@
     <sys:String x:Key="HideText">Hide Text</sys:String>
     <sys:String x:Key="Recognize">Recognize</sys:String>
     <sys:String x:Key="ReOcr">Take Screenshot Again for OCR</sys:String>
+    <sys:String x:Key="ReImTransOcr">Take Screenshot Again for Image Translation</sys:String>
     <sys:String x:Key="ReOcrKeepWindow">Keep Window Screenshot</sys:String>
     <sys:String x:Key="RecognizeQrCode">Recognize QrCode</sys:String>
     <sys:String x:Key="NoQrCodeFound">No QrCode found</sys:String>

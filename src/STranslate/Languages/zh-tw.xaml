@@ -580,6 +580,7 @@
     <sys:String x:Key="HideText">隱藏文字</sys:String>
     <sys:String x:Key="Recognize">辨識</sys:String>
     <sys:String x:Key="ReOcr">重新擷圖進行OCR</sys:String>
+    <sys:String x:Key="ReImTransOcr">重新擷圖進行圖片翻譯</sys:String>
     <sys:String x:Key="ReOcrKeepWindow">保留視窗擷圖</sys:String>
     <sys:String x:Key="RecognizeQrCode">辨識二維碼</sys:String>
     <sys:String x:Key="NoQrCodeFound">​​找不到二維碼</sys:String>
