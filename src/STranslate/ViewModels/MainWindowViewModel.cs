@@ -38,6 +38,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     public VocabularyService VocabularyService { get; }
 
     private readonly SqlService _sqlService;
+    private readonly DebounceExecutor _debounceExecutor;
 
     public Settings Settings { get; }
     public HotkeySettings HotkeySettings { get; }
@@ -73,6 +74,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         Settings = settings;
         HotkeySettings = hotkeySettings;
 
+        _debounceExecutor = new();
         _i18n.OnLanguageChanged += OnLanguageChanged;
     }
 
@@ -152,6 +154,9 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     [RelayCommand(IncludeCancelCommand = true, CanExecute = nameof(CanTranslate))]
     private async Task TranslateAsync(string? force, CancellationToken cancellationToken)
     {
+        // 取消防抖执行器中的待执行任务
+        _debounceExecutor.Cancel();
+
         ResetAllServices();
 
         IdentifiedLanguage = string.Empty;
@@ -634,6 +639,20 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
 
     #endregion
 
+    #region Auto Translate
+
+    [RelayCommand]
+    private void ToggleAutoTranslate()
+    {
+        Settings.AutoTranslate = !Settings.AutoTranslate;
+        if (Settings.AutoTranslate)
+            _snackbar.ShowSuccess(_i18n.GetTranslation("AutoTranslateEnabled"));
+        else
+            _snackbar.ShowInfo(_i18n.GetTranslation("AutoTranslateDisabled"));
+    }
+
+    #endregion
+
     #endregion
 
     #region OCR & Screenshot Commands
@@ -892,6 +911,34 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             _snackbar.ShowError(_i18n.GetTranslation("OperationFailed"));
     }
 
+    [RelayCommand(IncludeCancelCommand = true)]
+    private async Task SaveToVocabularyWithNoteAsync(Service service, CancellationToken cancellationToken)
+    {
+        var vocabularySvc = VocabularyService.GetActiveSvc<IVocabularyPlugin>();
+        if (vocabularySvc == null) return;
+
+        if (service.Plugin is not ITranslatePlugin plugin || plugin.TransResult.IsProcessing)
+            return;
+
+        var word = InputText;
+        var note = plugin.TransResult.IsSuccess ? plugin.TransResult.Text : string.Empty;
+
+        if (string.IsNullOrWhiteSpace(word))
+        {
+            _snackbar.ShowWarning(_i18n.GetTranslation("InputContentIsEmpty"));
+            return;
+        }
+
+        var result = await vocabularySvc.SaveWithNoteAsync(word, note, cancellationToken);
+        if (cancellationToken.IsCancellationRequested) return;
+        if (result.IsSuccess)
+            _snackbar.ShowSuccess(_i18n.GetTranslation("OperationSuccess"));
+        else if (!string.IsNullOrWhiteSpace(result.ErrorMessage))
+            _snackbar.ShowError(result.ErrorMessage);
+        else
+            _snackbar.ShowError(_i18n.GetTranslation("OperationFailed"));
+    }
+
     #endregion
 
     #region History Commands
@@ -981,14 +1028,14 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         {
             Show();
             IsTopmost = true;
-            await Utilities.StartMouseTextSelectionAsync();
-            Utilities.MouseTextSelected += OnMouseTextSelected;
+            await MouseKeyHelper.StartMouseTextSelectionAsync();
+            MouseKeyHelper.MouseTextSelected += OnMouseTextSelected;
         }
         else
         {
             IsTopmost = false;
-            Utilities.StopMouseTextSelection();
-            Utilities.MouseTextSelected -= OnMouseTextSelected;
+            MouseKeyHelper.StopMouseTextSelection();
+            MouseKeyHelper.MouseTextSelected -= OnMouseTextSelected;
         }
     }
 
@@ -1522,6 +1569,25 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     {
         if (!string.IsNullOrWhiteSpace(IdentifiedLanguage))
             IdentifiedLanguage = string.Empty;
+
+        if (!Settings.AutoTranslate)
+            return;
+
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            _debounceExecutor.Cancel();
+            return;
+        }
+
+        void Execute()
+        {
+            CancelAllOperations();
+            App.Current.Dispatcher.Invoke(() => TranslateCommand.Execute(null));
+            Show();
+            UpdateCaret();
+        }
+
+        _debounceExecutor.Execute(Execute, TimeSpan.FromMilliseconds(Settings.AutoTranslateDelayMs));
     }
 
     partial void OnIsMouseHookChanged(bool value) => _ = ToggleMouseHookAsync(value);
@@ -1591,7 +1657,9 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
 
     public void Dispose()
     {
-        Utilities.MouseTextSelected -= OnMouseTextSelected;
+        _debounceExecutor.Dispose();
+
+        MouseKeyHelper.MouseTextSelected -= OnMouseTextSelected;
 
         // 如果窗口一直没打开过，恢复位置后再退出
         if (Settings.MainWindowLeft <= -18000 && Settings.MainWindowTop <= -18000)

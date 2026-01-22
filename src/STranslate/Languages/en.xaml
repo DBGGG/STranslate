@@ -29,6 +29,8 @@
     <sys:String x:Key="SearchFunctionToolTip">Ctrl+F to search function</sys:String>
     <sys:String x:Key="Function">Function</sys:String>
     <sys:String x:Key="Appearance">Appearance</sys:String>
+    <sys:String x:Key="AutoTranslateEnabled">Enable Auto-Translate</sys:String>
+    <sys:String x:Key="AutoTranslateDisabled">Disable Auto-Translate</sys:String>
     <sys:String x:Key="General_AutoStartup">Auto Startup</sys:String>
     <sys:String x:Key="General_AutoStartupDescription">Automatically start the software when the computer starts.</sys:String>
     <sys:String x:Key="General_StartMode">Start Mode</sys:String>
@@ -54,6 +56,11 @@
     <sys:String x:Key="General_HttpTimeoutDescription">Network request timeout in seconds.</sys:String>
     <sys:String x:Key="General_TranslateOnPaste">Translate on Paste</sys:String>
     <sys:String x:Key="General_TranslateOnPasteDescription">Execute translation immediately when text is pasted into the input box.</sys:String>
+    <sys:String x:Key="General_AutoTranslate">Auto-Translate</sys:String>
+    <sys:String x:Key="General_AutoTranslateDescription">Automatically executes translation after a certain waiting time when inputting content.</sys:String>
+    <sys:String x:Key="General_AutoTranslateButtonVisible">Show automatic translation button on main interface</sys:String>
+    <sys:String x:Key="General_AutoTranslateDelay">Auto-Translate Delay</sys:String>
+    <sys:String x:Key="General_AutoTranslateDelayDescription">Waiting time after inputting content, unit: milliseconds.</sys:String>
     <sys:String x:Key="General_LineBreakHandleType">Line Break Handling</sys:String>
     <sys:String x:Key="General_LineBreakHandleTypeDescription" xml:space="preserve">Includes line break handling for word selection, screenshot translation, clipboard, and silent OCR scenarios.&#10;"Remove extra line breaks" is mainly for PDF text extraction, removing redundant line breaks and sentence breaks, but it may affect non-PDF extraction.</sys:String>
     <sys:String x:Key="General_ImageQuality">Image Quality</sys:String>
@@ -138,6 +145,7 @@
     <sys:String x:Key="Hotkey_SaveToVocabulary">Save To Vocabulary</sys:String>
     <sys:String x:Key="Hotkey_HistoryNavigePrevious">Navigate to previous history</sys:String>
     <sys:String x:Key="Hotkey_HistoryNavigeNext">Navigate to next history</sys:String>
+    <sys:String x:Key="Hotkey_AutoTranslate">Auto-Translate</sys:String>
     <sys:String x:Key="Hotkey_OcrImTransWindow">OCR | Image Translation Window Hotkey</sys:String>
     <sys:String x:Key="Hotkey_ReExecuteOcr">Re-execute Text Recognition | Image Translation</sys:String>
     <sys:String x:Key="Hotkey_SwitchImage">Switch Rendering/Annotation Image</sys:String>
@@ -173,6 +181,7 @@
     <sys:String x:Key="Network_ExternalCallPort">External Call Port</sys:String>
     <sys:String x:Key="Network_ExternalCallPortDescription">External call port, address is localhost</sys:String>
     <sys:String x:Key="Network_ExternalCallPortPlaceholder">e.g., 50020</sys:String>
+    <sys:String x:Key="Network_ExternalCallPortError">External call error message</sys:String>
     <sys:String x:Key="Network_EnableProxy">Enable Proxy</sys:String>
     <sys:String x:Key="Network_EnableProxyDescription">Enable or disable proxy functionality</sys:String>
     <sys:String x:Key="Network_ProxyType">Proxy Type</sys:String>
@@ -325,6 +334,7 @@
     <sys:String x:Key="IdentifiedCache">Cache</sys:String>
     <sys:String x:Key="CopyServiceNotFound">Service {0} not found</sys:String>
     <sys:String x:Key="CopiedToClipboard">Copied '{0}' result</sys:String>
+    <sys:String x:Key="SaveToVocabulary">Save to Vocabulary</sys:String>
 
     <!--  // Language Part //  -->
     <sys:String x:Key="SwapLanguage">Swap Source-Target Language</sys:String>
@@ -337,6 +347,7 @@
     <sys:String x:Key="CopyAsSnakeCase">Copy as snake_case</sys:String>
     <sys:String x:Key="InsertText">Insert Text</sys:String>
     <sys:String x:Key="BackTranslation">Back Translation</sys:String>
+    <sys:String x:Key="SaveToVocabularyWithNote">Save to Vocabulary with Note</sys:String>
 
     <sys:String x:Key="ExecuteTranslation">Execute Translation</sys:String>
     <sys:String x:Key="AutoBackTranslation">Auto Trans Back</sys:String>
@@ -567,6 +578,9 @@
     <sys:String x:Key="ShowText">Show Text</sys:String>
     <sys:String x:Key="HideText">Hide Text</sys:String>
     <sys:String x:Key="Recognize">Recognize</sys:String>
+    <sys:String x:Key="ReOcr">Take Screenshot Again for OCR</sys:String>
+    <sys:String x:Key="ReImTransOcr">Take Screenshot Again for Image Translation</sys:String>
+    <sys:String x:Key="ReOcrKeepWindow">Keep Window Screenshot</sys:String>
     <sys:String x:Key="RecognizeQrCode">Recognize QrCode</sys:String>
     <sys:String x:Key="NoQrCodeFound">No QrCode found</sys:String>
     <sys:String x:Key="NoLocationInfoTitle">No Location Info</sys:String>

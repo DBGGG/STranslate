@@ -108,6 +108,18 @@ public partial class Settings : ObservableObject
     /// </summary>
     [ObservableProperty] public partial bool TranslateOnPaste { get; set; } = true;
 
+    [ObservableProperty] public partial bool IsAutoTranslateVisible { get; set; } = true;
+
+    /// <summary>
+    /// 自动翻译
+    /// </summary>
+    [ObservableProperty] public partial bool AutoTranslate { get; set; } = false;
+
+    /// <summary>
+    /// 自动翻译延时（毫秒）
+    /// </summary>
+    [ObservableProperty] public partial int AutoTranslateDelayMs { get; set; } = 500;
+
     public double PreviousScreenWidth { get; set; }
     public double PreviousScreenHeight { get; set; }
     [ObservableProperty] public partial int CustomScreenNumber { get; set; } = 1;
@@ -312,7 +324,8 @@ public partial class Settings : ObservableObject
 
             if (e.PropertyName == nameof(MainWindowTop) ||
                 e.PropertyName == nameof(MainWindowLeft) ||
-                e.PropertyName == nameof(MainWindowWidth))
+                e.PropertyName == nameof(MainWindowWidth) ||
+                e.PropertyName == nameof(AutoTranslateDelayMs))
                 SaveWithDebounce();
             else
                 Save();
@@ -366,34 +379,11 @@ public partial class Settings : ObservableObject
 
     #region Private Methods
 
-    private Timer? _saveTimer;
-    private readonly Lock _timerLock = new();
+    private readonly DebounceExecutor _debounceExecutor = new();
     private const int DebounceTimeMs = 500; // 防抖时间
     internal void SaveWithDebounce()
     {
-        lock (_timerLock)
-        {
-            // 如果计时器已存在，则重置
-            _saveTimer?.Change(DebounceTimeMs, Timeout.Infinite);
-
-            // 如果计时器不存在，则创建
-            _saveTimer ??= new Timer(
-                (state) =>
-                {
-                    // 计时器到点，执行真正的保存
-                    Save();
-
-                    // 释放计时器
-                    lock (_timerLock)
-                    {
-                        _saveTimer?.Dispose();
-                        _saveTimer = null;
-                    }
-                },
-                null,
-                DebounceTimeMs, // 500毫秒后执行
-                Timeout.Infinite); // 只执行一次
-        }
+        _debounceExecutor.Execute(Save, TimeSpan.FromMilliseconds(DebounceTimeMs));
     }
 
     private void HandlePropertyChanged(string? propertyName)

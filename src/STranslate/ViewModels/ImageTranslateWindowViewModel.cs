@@ -238,6 +238,15 @@ public partial class ImageTranslateWindowViewModel : ObservableObject, IDisposab
     }
 
     [RelayCommand]
+    private async Task ImTransOcrAsync(Window? window)
+    {
+        window?.Hide();
+        await Task.Delay(150);
+        await _mainWindowViewModel.ScreenshotTranslateCommand.ExecuteAsync(null);
+        window?.Show();
+    }
+
+    [RelayCommand]
     private async Task ReExecuteAsync()
     {
         if (_sourceImage == null || IsExecuting) return;

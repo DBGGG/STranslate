@@ -29,6 +29,8 @@
     <sys:String x:Key="SearchFunctionToolTip">按 Ctrl+F 搜索功能</sys:String>
     <sys:String x:Key="Function">功能</sys:String>
     <sys:String x:Key="Appearance">外观</sys:String>
+    <sys:String x:Key="AutoTranslateEnabled">启用自动翻译</sys:String>
+    <sys:String x:Key="AutoTranslateDisabled">禁用自动翻译</sys:String>
     <sys:String x:Key="General_AutoStartup">开机自启</sys:String>
     <sys:String x:Key="General_AutoStartupDescription">电脑启动时软件自动启动。</sys:String>
     <sys:String x:Key="General_StartMode">启动模式</sys:String>
@@ -54,6 +56,11 @@
     <sys:String x:Key="General_HttpTimeoutDescription">请求网络请求的超时时间，单位：秒。</sys:String>
     <sys:String x:Key="General_TranslateOnPaste">粘贴立即翻译</sys:String>
     <sys:String x:Key="General_TranslateOnPasteDescription">输入框内粘贴文本立即执行翻译。</sys:String>
+    <sys:String x:Key="General_AutoTranslate">自动翻译</sys:String>
+    <sys:String x:Key="General_AutoTranslateDescription">输入内容等待一定时间后自动执行翻译。</sys:String>
+    <sys:String x:Key="General_AutoTranslateButtonVisible">在主界面上显示自动翻译按钮</sys:String>
+    <sys:String x:Key="General_AutoTranslateDelay">自动翻译延时</sys:String>
+    <sys:String x:Key="General_AutoTranslateDelayDescription">输入内容等待时间，单位：毫秒。</sys:String>
     <sys:String x:Key="General_LineBreakHandleType">取词换行处理</sys:String>
     <sys:String x:Key="General_LineBreakHandleTypeDescription" xml:space="preserve">包括划词、截图翻译、剪贴板、静默OCR取词场景的换行处理&#10;「移除多余换行」主要针对PDF取词场景，移除多余换行和断句，但是对非PDF取词可能有影响</sys:String>
     <sys:String x:Key="General_ImageQuality">图片质量</sys:String>
@@ -138,6 +145,7 @@
     <sys:String x:Key="Hotkey_SaveToVocabulary">保存到生词本</sys:String>
     <sys:String x:Key="Hotkey_HistoryNavigePrevious">导航到上一条历史记录</sys:String>
     <sys:String x:Key="Hotkey_HistoryNavigeNext">导航到下一条历史记录</sys:String>
+    <sys:String x:Key="Hotkey_AutoTranslate">自动翻译</sys:String>
     <sys:String x:Key="Hotkey_OcrImTransWindow">OCR | 图片翻译窗口快捷键</sys:String>
     <sys:String x:Key="Hotkey_ReExecuteOcr">重新执行文本识别 | 图片翻译</sys:String>
     <sys:String x:Key="Hotkey_SwitchImage">切换渲染图/标注图</sys:String>
@@ -173,6 +181,7 @@
     <sys:String x:Key="Network_ExternalCallPort">外部调用端口</sys:String>
     <sys:String x:Key="Network_ExternalCallPortDescription">外部调用端口，地址为 localhost</sys:String>
     <sys:String x:Key="Network_ExternalCallPortPlaceholder">例如：50020</sys:String>
+    <sys:String x:Key="Network_ExternalCallPortError">外部调用错误信息</sys:String>
     <sys:String x:Key="Network_EnableProxy">启用代理</sys:String>
     <sys:String x:Key="Network_EnableProxyDescription">启用或禁用代理功能</sys:String>
     <sys:String x:Key="Network_ProxyType">代理类型</sys:String>
@@ -325,6 +334,7 @@
     <sys:String x:Key="IdentifiedCache">缓存</sys:String>
     <sys:String x:Key="CopyServiceNotFound">未找到第 {0} 项服务</sys:String>
     <sys:String x:Key="CopiedToClipboard">已复制「{0}」结果</sys:String>
+    <sys:String x:Key="SaveToVocabulary">添加到生词本</sys:String>
 
     <!--  // Language Part //  -->
     <sys:String x:Key="SwapLanguage">交换原始-目标语言</sys:String>
@@ -337,6 +347,7 @@
     <sys:String x:Key="CopyAsSnakeCase">复制成蛇形</sys:String>
     <sys:String x:Key="InsertText">插入文本</sys:String>
     <sys:String x:Key="BackTranslation">回译</sys:String>
+    <sys:String x:Key="SaveToVocabularyWithNote">添加到生词本(含笔记)</sys:String>
 
     <sys:String x:Key="ExecuteTranslation">执行翻译</sys:String>
     <sys:String x:Key="AutoBackTranslation">自动回译</sys:String>
@@ -568,6 +579,9 @@
     <sys:String x:Key="ShowText">显示文字</sys:String>
     <sys:String x:Key="HideText">隐藏文字</sys:String>
     <sys:String x:Key="Recognize">识别</sys:String>
+    <sys:String x:Key="ReOcr">重新截图进行OCR</sys:String>
+    <sys:String x:Key="ReImTransOcr">重新截图进行图片翻译</sys:String>
+    <sys:String x:Key="ReOcrKeepWindow">保留窗口截图</sys:String>
     <sys:String x:Key="RecognizeQrCode">识别二维码</sys:String>
     <sys:String x:Key="NoQrCodeFound">​​未找到二维码</sys:String>
     <sys:String x:Key="NoLocationInfoTitle">无位置信息</sys:String>
