@@ -1,15 +1,6 @@
 ## 更新
 
-- 添加：为词典插件结果添加标签属性
-- 添加：插件页面添加插件市场跳转按钮
-- 优化：在使用 vLLM + LLM 转换图像时，冗余输出信息的问题。
-- 优化：截图使用体验
-- 优化：Markdown 遵循的浅色和深色主题
-- 优化：托盘右键增加主题感知功能
-- 优化：完善外部调用接口 [https://stranslate.zggsong.com/docs/invoke.html](https://stranslate.zggsong.com/docs/invoke.html)
-- 修复：使用 `curl` 或者 `SnipDo` 调用时所有窗口无法弹出至桌面最上层的问题
-- 修复：截图时主窗口仍有残留的问题
-- 修复：点击谷歌浏览器通知触发刚删除的热键对应功能的问题 #559 #578
+- 添加：隐藏输入框时触发输入翻译会临时显示输入框并聚焦，不再破坏用户的隐藏输入框设置
 
 ## 其他
 
@@ -19,4 +10,4 @@
 - [安装卸载](https://stranslate.zggsong.com/docs/(un)install.html)
 - [FAQ](https://stranslate.zggsong.com/docs/faq.html)
 
- **完整更新日志:** [2.0.3...v2.0.4](https://github.com/STranslate/STranslate/compare/2.0.3...v2.0.4)
+**完整更新日志:** [v2.0.7...v2.0.8](https://github.com/STranslate/STranslate/compare/v2.0.7...v2.0.8)

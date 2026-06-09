@@ -34,6 +34,7 @@ public partial class App : ISingleInstanceApp, INavigation, IDisposable
     private MainWindowViewModel? _mainWindowViewModel;
     private PluginManager? _pluginManager;
     private Notification? _notification;
+    private AutoUpdateCheckerService? _autoUpdateCheckerService;
     private static bool _disposed;
 
     public bool IsNavigated { get; set; }
@@ -134,6 +135,7 @@ public partial class App : ISingleInstanceApp, INavigation, IDisposable
                     services.AddScopedFromNamespace("STranslate.Views.Pages", Assembly.GetExecutingAssembly());
 
                     services.AddSingleton<UpdaterService>();
+                    services.AddSingleton<AutoUpdateCheckerService>();
                     services.AddSingleton<ExternalCallService>();
                     services.AddSingleton<SqlService>();
                 })
@@ -191,8 +193,6 @@ public partial class App : ISingleInstanceApp, INavigation, IDisposable
         _notification = Ioc.Default.GetRequiredService<INotification>() as Notification;
         _notification?.Install();
 
-        AutoLoggerAttribute.InitializeLogger(_logger);
-
         _pluginManager = Ioc.Default.GetRequiredService<PluginManager>();
         _pluginManager.LoadPlugins();
         Ioc.Default.GetRequiredService<ServiceManager>().LoadServices();
@@ -203,6 +203,7 @@ public partial class App : ISingleInstanceApp, INavigation, IDisposable
         RegisterTaskSchedulerUnhandledException();
 
         _mainWindowViewModel = Ioc.Default.GetRequiredService<MainWindowViewModel>();
+        _autoUpdateCheckerService = Ioc.Default.GetRequiredService<AutoUpdateCheckerService>();
         _mainWindow = new MainWindow();
         Current.MainWindow = _mainWindow;
         Current.MainWindow.Title = Constant.AppName;
@@ -213,6 +214,7 @@ public partial class App : ISingleInstanceApp, INavigation, IDisposable
             UpdateToolTip();
             CheckAndShowInfo();
             WebDavBackupOperation();
+            _autoUpdateCheckerService?.Start();
         };
 
         RegisterExitEvents();
@@ -306,6 +308,7 @@ public partial class App : ISingleInstanceApp, INavigation, IDisposable
 
         if (NeedAdmin())
         {
+            SingleInstance<App>.Cleanup();
 #if DEBUG
             // 7 秒延迟是 Visual Studio 调试器的正常行为 生产环境不会有这个延迟(Ctrl+F5能避免该延迟)
             Process.GetCurrentProcess().Kill();
@@ -355,7 +358,7 @@ public partial class App : ISingleInstanceApp, INavigation, IDisposable
             var jsonContent = File.ReadAllText(filePath);
             var parsedData = System.Text.Json.Nodes.JsonNode.Parse(jsonContent);
 
-            if (!Enum.TryParse<StartMode>(parsedData?["StartMode"]?.ToString(), out var mode)
+            if (!Enum.TryParse<StartMode>(parsedData?["StartMode"]?.ToString(), true, out var mode)
                 || mode == StartMode.Normal)
                 return false;
 
@@ -369,7 +372,7 @@ public partial class App : ISingleInstanceApp, INavigation, IDisposable
                 UACHelper.Create();
             }
 
-            UACHelper.Run(mode);
+            UACHelper.Run(mode, waitPid: Environment.ProcessId, waitTimeoutSec: 6);
             return true;
         }
         catch (Exception ex)
@@ -386,7 +389,7 @@ public partial class App : ISingleInstanceApp, INavigation, IDisposable
     private static void ShowErrorMsgBoxAndFailFast(string message, Exception e)
     {
         // Firstly show users the message
-        iNKORE.UI.WPF.Modern.Controls.MessageBox.Show(e.ToString(), message, MessageBoxButton.OK, MessageBoxImage.Error);
+        AppMessageBox.Show(e.ToString(), message, MessageBoxButton.OK, MessageBoxImage.Error);
 
         // Flow cannot construct its App instance, so ensure Flow crashes w/ the exception info.
         Environment.FailFast(message, e);
@@ -477,6 +480,7 @@ public partial class App : ISingleInstanceApp, INavigation, IDisposable
         {
             // Dispose needs to be called on the main Windows thread,
             // since some resources owned by the thread need to be disposed.
+            _autoUpdateCheckerService?.Dispose();
             _notification?.Uninstall();
             _mainWindowViewModel?.Dispose();
             _mainWindow?.Dispatcher.Invoke(_mainWindow.Dispose);

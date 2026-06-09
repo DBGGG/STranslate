@@ -42,15 +42,19 @@ public partial class Settings : ObservableObject
 
     [ObservableProperty] public partial bool HideNotifyIcon { get; set; } = false;
 
+    /// <summary>
+    /// 是否启用自动检查更新
+    /// </summary>
+    [ObservableProperty] public partial bool AutoCheckUpdate { get; set; } = true;
+
     [ObservableProperty] public partial ElementTheme ColorScheme { get; set; }
 
     [ObservableProperty] public partial HistoryLimit HistoryLimit { get; set; } = HistoryLimit.Limit1000;
 
     [ObservableProperty] public partial bool IsColorSchemeVisible { get; set; } = true;
 
-    [ObservableProperty] public partial bool ScreenshotTranslateInImage { get; set; } = true;
-
-    [ObservableProperty] public partial bool IsScreenshotTranslateInImageVisible { get; set; } = true;
+    [ObservableProperty] public partial bool IsScreenshotTranslateVisible { get; set; } = true;
+    [ObservableProperty] public partial bool IsImageTranslateVisible { get; set; } = true;
 
     /// <summary>
     /// 截图时是否显示辅助线
@@ -69,6 +73,10 @@ public partial class Settings : ObservableObject
 
     [ObservableProperty] public partial bool IsOcrVisible { get; set; } = true;
 
+    [ObservableProperty] public partial bool IsClipboardMonitorVisible { get; set; } = true;
+    [ObservableProperty] public partial List<string> MainHeaderVisibleActions { get; set; } = [];
+    [ObservableProperty] public partial bool IsCloseButtonVisible { get; set; } = false;
+
     [ObservableProperty] public partial DoubleClickTrayFunction DoubleClickTrayFunction { get; set; }
 
     [ObservableProperty] public partial CopyAfterTranslation CopyAfterTranslation { get; set; }
@@ -76,6 +84,8 @@ public partial class Settings : ObservableObject
     [ObservableProperty] public partial bool CopyAfterTranslationNotAutomatic { get; set; }
 
     [ObservableProperty] public partial bool CopyAfterOcr { get; set; }
+
+    [ObservableProperty] public partial bool FocusInputAfterScreenshotTranslate { get; set; } = true;
 
     [ObservableProperty] public partial int HttpTimeout { get; set; } = 30;
 
@@ -104,9 +114,21 @@ public partial class Settings : ObservableObject
     [ObservableProperty] public partial LangEnum SecondLanguage { get; set; } = LangEnum.English;
 
     /// <summary>
+    /// 文本输出是否使用剪贴板粘贴。
+    /// false: 键盘模拟输入（默认）
+    /// true: 剪贴板 Ctrl+V
+    /// </summary>
+    [ObservableProperty] public partial bool UseClipboardOutput { get; set; } = false;
+
+    /// <summary>
     /// 粘贴时自动翻译
     /// </summary>
     [ObservableProperty] public partial bool TranslateOnPaste { get; set; } = true;
+    
+    /// <summary>
+    /// 切换提示词后自动翻译
+    /// </summary>
+    [ObservableProperty] public partial bool AutoTranslateOnPromptChanged { get; set; } = false;
 
     [ObservableProperty] public partial bool IsAutoTranslateVisible { get; set; } = true;
 
@@ -124,11 +146,16 @@ public partial class Settings : ObservableObject
     public double PreviousScreenHeight { get; set; }
     [ObservableProperty] public partial int CustomScreenNumber { get; set; } = 1;
     [ObservableProperty] public partial WindowScreenType WindowScreen { get; set; } = WindowScreenType.Cursor;
+    public bool IsWindowAlignVisible =>
+        WindowScreen != WindowScreenType.RememberLastLaunchLocation &&
+        WindowScreen != WindowScreenType.FollowMouse;
+    partial void OnWindowScreenChanged(WindowScreenType value) => OnPropertyChanged(nameof(IsWindowAlignVisible));
     [ObservableProperty] public partial WindowAlignType WindowAlign { get; set; } = WindowAlignType.Center;
     [ObservableProperty] public partial double MainWindowLeft { get; set; }
     [ObservableProperty] public partial double MainWindowTop { get; set; }
     [ObservableProperty] public partial double CustomWindowLeft { get; set; }
     [ObservableProperty] public partial double CustomWindowTop { get; set; }
+    [ObservableProperty] public partial double MainWindowMaxHeightRatio { get; set; } = 0.85;
 
     private double _mainWindowWidth = 470;
     public double MainWindowWidth
@@ -155,6 +182,7 @@ public partial class Settings : ObservableObject
     [ObservableProperty] public partial bool ShowPromptButton { get; set; } = true;
 
     [ObservableProperty] public partial bool ShowScreenshotItemInNotifyIconMenu { get; set; } = false;
+    [ObservableProperty] public partial bool ShowImageTranslateItemInNotifyIconMenu { get; set; } = false;
     [ObservableProperty] public partial bool ShowOcrItemInNotifyIconMenu { get; set; } = false;
     [ObservableProperty] public partial bool ShowQrCodeItemInNotifyIconMenu { get; set; } = false;
 
@@ -162,6 +190,27 @@ public partial class Settings : ObservableObject
     /// 取词时换行处理
     /// </summary>
     [ObservableProperty] public partial LineBreakHandleType LineBreakHandleType { get; set; } = LineBreakHandleType.RemoveExtraLineBreak;
+
+    /// <summary>
+    /// 取词时分隔符处理
+    /// </summary>
+    [ObservableProperty] public partial TextSeparatorHandleType TextSeparatorHandleType { get; set; } = TextSeparatorHandleType.None;
+
+    /// <summary>
+    /// 取词分隔符处理生效范围
+    /// </summary>
+    [ObservableProperty] public partial TextSeparatorHandleScope TextSeparatorHandleScopes { get; set; } = TextSeparatorHandleScope.Crossword;
+
+    /// <summary>
+    /// 划词后等待剪贴板写入文本的最长时间（毫秒）。
+    /// </summary>
+    [ObservableProperty] public partial int SelectedTextFetchTimeoutMs { get; set; } = 500;
+
+    /// <summary>
+    /// 划词取词失败时的回退目标。
+    /// </summary>
+    [ObservableProperty] public partial CrosswordFetchFailedFallbackTarget CrosswordFetchFailedFallbackTarget { get; set; } = CrosswordFetchFailedFallbackTarget.InputTranslate;
+
     [ObservableProperty] public partial ImageQuality ImageQuality { get; set; } = ImageQuality.Medium;
 
     #region Layout Analysis
@@ -257,10 +306,37 @@ public partial class Settings : ObservableObject
 
     #endregion
 
+    #region Plugin Market Settings
+
+    /// <summary>
+    /// 插件市场CDN源
+    /// </summary>
+    [ObservableProperty] public partial PluginMarketCdnSourceType PluginMarketCdnSource { get; set; } = PluginMarketCdnSourceType.JsDelivr;
+
+    /// <summary>
+    /// 自定义插件市场CDN URL模板
+    /// 可用占位符: {author}, {repo}, {branch}, {path}
+    /// </summary>
+    [ObservableProperty] public partial string CustomPluginMarketCdnUrl { get; set; } = "https://fastly.jsdelivr.net/gh/{author}/{repo}@{branch}/{path}";
+
+    /// <summary>
+    /// 插件下载代理类型
+    /// </summary>
+    [ObservableProperty] public partial PluginDownloadProxyType PluginDownloadProxy { get; set; } = PluginDownloadProxyType.GitHub;
+
+    /// <summary>
+    /// 自定义下载代理URL
+    /// </summary>
+    [ObservableProperty] public partial string CustomDownloadProxyUrl { get; set; } = string.Empty;
+
+    #endregion
+
     #region Image Translate Settings
 
     [ObservableProperty] public partial bool IsImTranShowingAnnotated { get; set; } = false;
     [ObservableProperty] public partial bool IsImTranShowingTextControl { get; set; } = false;
+    [ObservableProperty] public partial LangEnum ImageTranslateSourceLang { get; set; } = LangEnum.Auto;
+    [ObservableProperty] public partial LangEnum ImageTranslateTargetLang { get; set; } = LangEnum.Auto;
     [ObservableProperty] public partial double ImTranWindowWidth { get; set; } = 600;
     [ObservableProperty] public partial double ImTranWindowHeight { get; set; } = 600;
 
@@ -309,6 +385,24 @@ public partial class Settings : ObservableObject
         }
     }
 
+    partial void OnMainWindowMaxHeightRatioChanged(double value)
+    {
+        var normalized = Math.Clamp(Math.Round(value, 2), 0.6, 1.0);
+        if (Math.Abs(normalized - value) > double.Epsilon)
+        {
+            MainWindowMaxHeightRatio = normalized;
+        }
+    }
+
+    partial void OnSelectedTextFetchTimeoutMsChanged(int value)
+    {
+        var normalized = Math.Clamp(value, 50, 5000);
+        if (normalized != value)
+        {
+            SelectedTextFetchTimeoutMs = normalized;
+        }
+    }
+
     #endregion
 
     #region Public Methods
@@ -325,7 +419,9 @@ public partial class Settings : ObservableObject
             if (e.PropertyName == nameof(MainWindowTop) ||
                 e.PropertyName == nameof(MainWindowLeft) ||
                 e.PropertyName == nameof(MainWindowWidth) ||
-                e.PropertyName == nameof(AutoTranslateDelayMs))
+                e.PropertyName == nameof(MainWindowMaxHeightRatio) ||
+                e.PropertyName == nameof(AutoTranslateDelayMs) ||
+                e.PropertyName == nameof(SelectedTextFetchTimeoutMs))
                 SaveWithDebounce();
             else
                 Save();
@@ -334,12 +430,54 @@ public partial class Settings : ObservableObject
 
     internal void Save() => Storage?.Save();
 
+    public void EnsureMainHeaderVisibleActionsInitialized()
+    {
+        var normalizedActions = MainHeaderActions.Normalize(MainHeaderVisibleActions);
+        if (normalizedActions.Count > 0)
+        {
+            if (!MainHeaderVisibleActions.SequenceEqual(normalizedActions))
+            {
+                MainHeaderVisibleActions = [.. normalizedActions];
+            }
+
+            SyncLegacyMainHeaderVisibility(normalizedActions);
+            return;
+        }
+
+        var migratedActions = new List<string>();
+        if (IsClipboardMonitorVisible) migratedActions.Add(MainHeaderActions.ClipboardMonitor);
+        if (IsAutoTranslateVisible) migratedActions.Add(MainHeaderActions.AutoTranslate);
+        if (IsOcrVisible) migratedActions.Add(MainHeaderActions.Ocr);
+        if (IsImageTranslateVisible) migratedActions.Add(MainHeaderActions.ImageTranslate);
+        if (IsScreenshotTranslateVisible) migratedActions.Add(MainHeaderActions.ScreenshotTranslate);
+        if (IsMouseHookVisible) migratedActions.Add(MainHeaderActions.MouseHook);
+        if (IsColorSchemeVisible) migratedActions.Add(MainHeaderActions.ColorScheme);
+        if (IsHideInputVisible) migratedActions.Add(MainHeaderActions.HideInput);
+        if (IsHistoryNavigationVisible) migratedActions.Add(MainHeaderActions.HistoryNavigation);
+
+        ApplyMainHeaderVisibleActions(migratedActions);
+    }
+
+    public void ApplyMainHeaderVisibleActions(IReadOnlyList<string> actions)
+    {
+        var normalizedActions = MainHeaderActions.Normalize(actions);
+        if (!MainHeaderVisibleActions.SequenceEqual(normalizedActions))
+        {
+            MainHeaderVisibleActions = [.. normalizedActions];
+        }
+
+        SyncLegacyMainHeaderVisibility(normalizedActions);
+    }
+
     public void Initialize()
     {
         if (Storage is null)
         {
             throw new InvalidOperationException("Storage is not set. Please call SetStorage() before Initialize().");
         }
+
+        EnsureMainHeaderVisibleActionsInitialized();
+
         ApplyLogLevel();
         ApplyStartup();
         ApplyStartMode();
@@ -430,6 +568,21 @@ public partial class Settings : ObservableObject
             default:
                 break;
         }
+    }
+
+    private void SyncLegacyMainHeaderVisibility(IReadOnlyList<string> actions)
+    {
+        var actionSet = actions.ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        IsClipboardMonitorVisible = actionSet.Contains(MainHeaderActions.ClipboardMonitor);
+        IsAutoTranslateVisible = actionSet.Contains(MainHeaderActions.AutoTranslate);
+        IsOcrVisible = actionSet.Contains(MainHeaderActions.Ocr);
+        IsImageTranslateVisible = actionSet.Contains(MainHeaderActions.ImageTranslate);
+        IsScreenshotTranslateVisible = actionSet.Contains(MainHeaderActions.ScreenshotTranslate);
+        IsMouseHookVisible = actionSet.Contains(MainHeaderActions.MouseHook);
+        IsColorSchemeVisible = actionSet.Contains(MainHeaderActions.ColorScheme);
+        IsHideInputVisible = actionSet.Contains(MainHeaderActions.HideInput);
+        IsHistoryNavigationVisible = actionSet.Contains(MainHeaderActions.HistoryNavigation);
     }
 
     #endregion
@@ -587,7 +740,12 @@ public enum LanguageDetectorType
 {
     Local,
     Baidu,
-    Tencent,
+
+    /// <summary>
+    /// 官方停止服务，弃用
+    /// </summary>
+    //Tencent,
+
     Niutrans,
     Bing,
     Yandex,
@@ -601,6 +759,42 @@ public enum LineBreakHandleType
     RemoveExtraLineBreak,
     RemoveAllLineBreak,
     RemoveAllLineBreakWithoutSpace,
+}
+
+public enum TextSeparatorHandleType
+{
+    None,
+    Underscore,
+    Hyphen,
+    UnderscoreAndHyphen,
+}
+
+[Flags]
+public enum TextSeparatorHandleScope
+{
+    None = 0,
+    MouseHook = 1,
+    Crossword = 2,
+    Incremental = 4,
+    ClipboardMonitor = 8,
+    ScreenshotTranslate = 16,
+    SilentOcr = 32,
+}
+
+/// <summary>
+/// 划词取词失败时，主窗口的回退行为。
+/// </summary>
+public enum CrosswordFetchFailedFallbackTarget
+{
+    /// <summary>
+    /// 回退到输入翻译（清空输入并显示主窗口）。
+    /// </summary>
+    InputTranslate,
+
+    /// <summary>
+    /// 仅显示主窗口，保留当前输入与输出内容。
+    /// </summary>
+    ShowWindow,
 }
 
 public enum LayoutAnalysisMode
@@ -619,6 +813,7 @@ public enum WindowScreenType
     Cursor,
     Focus,
     Primary,
+    FollowMouse,
     Custom
 }
 
@@ -673,6 +868,21 @@ public enum DoubleClickTrayFunction
     ToggleMouseHook,
     ToggleGlobalHotkeys,
     Exit
+}
+
+public enum PluginMarketCdnSourceType
+{
+    JsDelivr,
+    GitHubRaw,
+    Custom
+}
+
+public enum PluginDownloadProxyType
+{
+    GitHub,
+    GhProxyMirror,
+    GhProxyNet,
+    Custom
 }
 
 #endregion

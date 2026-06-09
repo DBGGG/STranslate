@@ -56,18 +56,17 @@ public partial class ImageTranslateWindowViewModel : ObservableObject, IDisposab
         _notification = notification;
 
         OcrEngines = _ocrService.Services;
-        SelectedOcrEngine = _ocrService.Services.FirstOrDefault(x => x.IsEnabled);
+        RefreshSelectedOcrEngine();
         _transCollectionView = new() { Source = _translateService.Services };
         _transCollectionView.Filter += OnTransFilter;
         SelectedTranslateEngine = _translateService.ImageTranslateService;
 
-        // 订阅 OcrViewModel 中服务的 PropertyChanged 事件
         _ocrService.Services.CollectionChanged += OnOcrServicesCollectionChanged;
-        // 为现有服务订阅事件
         foreach (var service in _ocrService.Services)
         {
-            service.PropertyChanged += OnOcrServicePropertyChanged;
+            service.PropertyChanged += OnOcrEnginePropertyChanged;
         }
+        _ocrService.PropertyChanged += OnOcrServicePropertyChanged;
 
         // 监听图片翻译服务切换
         _translateService.PropertyChanged += OnTranServicePropertyChanged;
@@ -163,9 +162,15 @@ public partial class ImageTranslateWindowViewModel : ObservableObject, IDisposab
             _sourceImage = Utilities.ToBitmapImage(bitmap, Settings.GetImageFormat());
             DisplayImage = _sourceImage;
 
-            var ocrSvc = _ocrService.GetActiveSvc<IOcrPlugin>();
+            var ocrSvc = _ocrService.GetImageTranslateOcrSvcOrDefault();
             if (ocrSvc == null)
+            {
+                Helper.PromptConfigureService(
+                    _i18n.GetTranslation("ImageTranslateOcrServiceNotFoundTitle"),
+                    _i18n.GetTranslation("ImageTranslateOcrServiceNotFoundMessage"),
+                    nameof(OcrPage));
                 return;
+            }
 
             var data = Utilities.ToBytes(bitmap, Settings.GetImageFormat());
             _lastOcrResult = await ocrSvc.RecognizeAsync(new OcrRequest(data, Settings.OcrLanguage), cancellationToken);
@@ -178,7 +183,7 @@ public partial class ImageTranslateWindowViewModel : ObservableObject, IDisposab
 
 
             if (Settings.CopyAfterOcr)
-                Utilities.SetText(_lastOcrResult.Text);
+                ClipboardHelper.SetText(_lastOcrResult.Text);
 
             IsNoLocationInfoVisible = !Utilities.HasBoxPoints(_lastOcrResult);
 
@@ -201,11 +206,17 @@ public partial class ImageTranslateWindowViewModel : ObservableObject, IDisposab
 
             await Parallel.ForEachAsync(_lastOcrResult.OcrContents, cancellationToken, async (content, cancellationToken) =>
             {
-                var (isSuccess, source, target) = await LanguageDetector.GetLanguageAsync(content.Text, cancellationToken).ConfigureAwait(false);
+                var (isSuccess, source, target) = await LanguageDetector
+                    .GetLanguageAsync(
+                        content.Text,
+                        Settings.ImageTranslateSourceLang,
+                        Settings.ImageTranslateTargetLang,
+                        cancellationToken)
+                    .ConfigureAwait(false);
                 if (!isSuccess)
                 {
                     _logger.LogWarning($"Language detection failed for text: {content.Text}");
-                    _notification.Show(_i18n.GetTranslation("Prompt"), "语言检测失败");
+                    _snackbar.ShowWarning(_i18n.GetTranslation("LanguageDetectionFailed"));
                     return;
                 }
                 if (string.IsNullOrWhiteSpace(content.Text))
@@ -228,7 +239,7 @@ public partial class ImageTranslateWindowViewModel : ObservableObject, IDisposab
         }
         catch (Exception ex)
         {
-            _notification.Show(_i18n.GetTranslation("Prompt"), $"{_i18n.GetTranslation("ImtransFailed")}\n{ex.Message}");
+            _snackbar.ShowError($"{_i18n.GetTranslation("ImtransFailed")}\n{ex.Message}");
             _logger.LogError(ex, "Image Translate execution failed");
         }
         finally
@@ -299,7 +310,13 @@ public partial class ImageTranslateWindowViewModel : ObservableObject, IDisposab
     {
         var ttsSvc = _ttsService.GetActiveSvc<ITtsPlugin>();
         if (ttsSvc == null)
+        {
+            Helper.PromptConfigureService(
+                _i18n.GetTranslation("Prompt"),
+                _i18n.GetTranslation("TtsServiceNotFound"),
+                nameof(TtsPage));
             return;
+        }
 
         await ttsSvc.PlayAudioAsync(text, cancellationToken);
     }
@@ -480,20 +497,26 @@ public partial class ImageTranslateWindowViewModel : ObservableObject, IDisposab
         }
     }
 
+    private bool _isUpdatingOcrEngine = false;
+
+    private void RefreshSelectedOcrEngine()
+    {
+        _isUpdatingOcrEngine = true;
+        try
+        {
+            SelectedOcrEngine = _ocrService.GetImageTranslateOcrServiceOrDefault();
+        }
+        finally
+        {
+            _isUpdatingOcrEngine = false;
+        }
+    }
+
     private void OnOcrServicePropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(Service.IsEnabled) && sender is Service service)
+        if (e.PropertyName == nameof(OcrService.ImageTranslateOcrService))
         {
-            // 如果某个服务被启用，同步更新 SelectedOcrEngine
-            if (service.IsEnabled)
-            {
-                SelectedOcrEngine = service;
-            }
-            // 如果当前选中的服务被禁用，清空选择
-            else if (SelectedOcrEngine == service)
-            {
-                SelectedOcrEngine = null;
-            }
+            RefreshSelectedOcrEngine();
         }
     }
 
@@ -503,33 +526,44 @@ public partial class ImageTranslateWindowViewModel : ObservableObject, IDisposab
         {
             foreach (Service service in e.NewItems)
             {
-                service.PropertyChanged += OnOcrServicePropertyChanged;
+                service.PropertyChanged += OnOcrEnginePropertyChanged;
             }
         }
         if (e.OldItems != null)
         {
             foreach (Service service in e.OldItems)
             {
-                service.PropertyChanged -= OnOcrServicePropertyChanged;
+                service.PropertyChanged -= OnOcrEnginePropertyChanged;
             }
+        }
+
+        RefreshSelectedOcrEngine();
+    }
+
+    private void OnOcrEnginePropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(Service.IsEnabled) &&
+            _ocrService.ImageTranslateOcrService == null)
+        {
+            RefreshSelectedOcrEngine();
         }
     }
 
     /// <summary>
-    /// 当用户在 UI 中切换 OCR 引擎时，同步更新服务的 IsEnabled 状态
+    /// 图片翻译窗口中的 OCR 选择映射到独立的图片翻译 OCR 服务
     /// </summary>
     partial void OnSelectedOcrEngineChanged(Service? oldValue, Service? newValue)
     {
-        // 禁用旧的引擎
-        if (oldValue != null && oldValue.IsEnabled)
-        {
-            oldValue.IsEnabled = false;
-        }
+        if (_isUpdatingOcrEngine)
+            return;
 
-        // 启用新的引擎
-        if (newValue != null && !newValue.IsEnabled)
+        if (newValue == null)
         {
-            newValue.IsEnabled = true;
+            _ocrService.DeactiveImTranOcr();
+        }
+        else
+        {
+            _ocrService.ActiveImTranOcr(newValue);
         }
     }
 
@@ -1107,9 +1141,10 @@ public partial class ImageTranslateWindowViewModel : ObservableObject, IDisposab
     {
         // 取消订阅事件，防止内存泄漏
         _ocrService.Services.CollectionChanged -= OnOcrServicesCollectionChanged;
+        _ocrService.PropertyChanged -= OnOcrServicePropertyChanged;
         foreach (var service in _ocrService.Services)
         {
-            service.PropertyChanged -= OnOcrServicePropertyChanged;
+            service.PropertyChanged -= OnOcrEnginePropertyChanged;
         }
         _transCollectionView.Filter -= OnTransFilter;
         _translateService.PropertyChanged -= OnTranServicePropertyChanged;

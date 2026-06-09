@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
 using STranslate.Controls;
 using STranslate.Core;
+using STranslate.Helpers;
 using STranslate.Plugin;
 using STranslate.Services;
 using STranslate.ViewModels.Pages;
@@ -85,6 +86,7 @@ public partial class OcrWindowViewModel : ObservableObject, IDisposable
     private readonly INotification _notification;
     private const double WidthMultiplier = 2;
     private const double WidthAdjustment = 12;
+    private bool _hasShownNoLocationInfoForSelectedEngine;
 
     [ObservableProperty]
     public partial bool IsExecuting { get; set; } = false;
@@ -145,7 +147,13 @@ public partial class OcrWindowViewModel : ObservableObject, IDisposable
 
             var ocrSvc = _ocrService.GetActiveSvc<IOcrPlugin>();
             if (ocrSvc == null)
+            {
+                Helper.PromptConfigureService(
+                    _i18n.GetTranslation("OcrServiceNotFoundTitle"),
+                    _i18n.GetTranslation("OcrServiceNotFoundMessage"),
+                    nameof(OcrPage));
                 return;
+            }
 
             var data = Utilities.ToBytes(bitmap, Settings.GetImageFormat());
 
@@ -162,12 +170,18 @@ public partial class OcrWindowViewModel : ObservableObject, IDisposable
             {
                 _snackbar.ShowWarning(_i18n.GetTranslation("OcrFailed"));
                 _logger.LogError("OCR failed: {ErrorMessage}", _lastOcrResult.ErrorMessage);
+                return;
             }
 
             if (Settings.CopyAfterOcr)
-                Utilities.SetText(_lastOcrResult.Text);
+                ClipboardHelper.SetText(_lastOcrResult.Text);
 
-            IsNoLocationInfoVisible = !Utilities.HasBoxPoints(_lastOcrResult);
+            var hasBoxPoints = Utilities.HasBoxPoints(_lastOcrResult);
+            IsNoLocationInfoVisible = !hasBoxPoints && !_hasShownNoLocationInfoForSelectedEngine;
+            if (IsNoLocationInfoVisible)
+            {
+                _hasShownNoLocationInfoForSelectedEngine = true;
+            }
 
             _annotatedImage = GenerateAnnotatedImage(_lastOcrResult, _sourceImage);
             PopulateOcrWords(_lastOcrResult);
@@ -181,7 +195,7 @@ public partial class OcrWindowViewModel : ObservableObject, IDisposable
         }
         catch (Exception ex)
         {
-            _notification.Show(_i18n.GetTranslation("Prompt"), $"{_i18n.GetTranslation("OcrFailed")}\n{ex.Message}");
+            _snackbar.ShowError($"{_i18n.GetTranslation("OcrFailed")}\n{ex.Message}");
             _logger.LogError(ex, "OCR execution failed");
         }
         finally
@@ -252,7 +266,13 @@ public partial class OcrWindowViewModel : ObservableObject, IDisposable
     {
         var ttsSvc = _ttsService.GetActiveSvc<ITtsPlugin>();
         if (ttsSvc == null)
+        {
+            Helper.PromptConfigureService(
+                _i18n.GetTranslation("Prompt"),
+                _i18n.GetTranslation("TtsServiceNotFound"),
+                nameof(TtsPage));
             return;
+        }
 
         await ttsSvc.PlayAudioAsync(text, cancellationToken);
     }
@@ -498,6 +518,12 @@ public partial class OcrWindowViewModel : ObservableObject, IDisposable
     /// </summary>
     partial void OnSelectedOcrEngineChanged(Service? oldValue, Service? newValue)
     {
+        if (oldValue != newValue)
+        {
+            _hasShownNoLocationInfoForSelectedEngine = false;
+            IsNoLocationInfoVisible = false;
+        }
+
         // 禁用旧的引擎
         if (oldValue != null && oldValue.IsEnabled)
         {

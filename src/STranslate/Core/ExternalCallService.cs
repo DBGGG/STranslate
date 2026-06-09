@@ -15,6 +15,7 @@ public class ExternalCallService(
     INotification notification)
 {
     private HttpListener? _listener;
+    private readonly SemaphoreSlim _externalCallLock = new(1, 1);
 
     public bool IsStarted { get; private set; }
 
@@ -121,24 +122,44 @@ public class ExternalCallService(
 
     private void ExecuteExternalCall(ExternalCallAction action, string content)
     {
-        App.Current.Dispatcher.Invoke(async () =>
+        var dispatcher = App.Current?.Dispatcher;
+        if (dispatcher == null)
+        {
+            logger.LogWarning("Dispatcher is unavailable, skip external action: {Action}", action);
+            return;
+        }
+
+        // 外部接口会被并发请求，串行执行可避免静默任务重叠导致全局光标状态错乱。
+        _ = dispatcher.InvokeAsync(() => ExecuteExternalCallAsync(action, content));
+    }
+
+    /// <summary>
+    /// 在 UI 线程串行执行外部调用，确保后台静默任务不会并发改写全局状态。
+    /// </summary>
+    /// <param name="action">外部调用动作类型</param>
+    /// <param name="content">外部调用内容</param>
+    /// <returns>异步任务</returns>
+    private async Task ExecuteExternalCallAsync(ExternalCallAction action, string content)
+    {
+        await _externalCallLock.WaitAsync();
+        try
         {
             switch (action)
             {
                 case ExternalCallAction.translate:
                     if (string.IsNullOrWhiteSpace(content))
-                        viewModel.InputClearCommand.Execute(null);
+                        viewModel.InputClearCommand.Execute(WindowActivationMode.ForceForeground);
                     else
-                        viewModel.ExecuteTranslate(content);
+                        viewModel.ExecuteTranslate(content, activationMode: WindowActivationMode.ForceForeground);
                     break;
                 case ExternalCallAction.translate_force:
                     if (string.IsNullOrWhiteSpace(content))
-                        viewModel.InputClearCommand.Execute(null);
+                        viewModel.InputClearCommand.Execute(WindowActivationMode.ForceForeground);
                     else
-                        viewModel.ExecuteTranslate(content, "force");
+                        viewModel.ExecuteTranslate(content, "force", WindowActivationMode.ForceForeground);
                     break;
                 case ExternalCallAction.translate_input:
-                    viewModel.InputClearCommand.Execute(null);
+                    viewModel.InputClearCommand.Execute(WindowActivationMode.ForceForeground);
                     break;
                 case ExternalCallAction.translate_ocr:
                     if (string.IsNullOrWhiteSpace(content))
@@ -147,6 +168,15 @@ public class ExternalCallService(
                     {
                         using var bitmap = Utilities.ToBitmap(content);
                         await viewModel.ScreenshotTranslateHandlerAsync(bitmap);
+                    }
+                    break;
+                case ExternalCallAction.translate_ocr_image:
+                    if (string.IsNullOrWhiteSpace(content))
+                        viewModel.ImageTranslateCommand.Execute(null);
+                    else
+                    {
+                        using var bitmap = Utilities.ToBitmap(content);
+                        await viewModel.ImageTranslateHandlerAsync(bitmap);
                     }
                     break;
                 case ExternalCallAction.translate_crossword:
@@ -200,13 +230,13 @@ public class ExternalCallService(
                     }
                     break;
                 case ExternalCallAction.open_window:
-                    viewModel.ToggleAppCommand.Execute(null);
+                    viewModel.ToggleAppCommand.Execute(WindowActivationMode.ForceForeground);
                     break;
                 case ExternalCallAction.open_preference:
-                    viewModel.OpenSettingsCommand.Execute(null);
+                    await viewModel.OpenSettingsAndNavigateAsync(null, WindowActivationMode.ForceForeground);
                     break;
                 case ExternalCallAction.open_history:
-                    viewModel.OpenHistoryCommand.Execute(null);
+                    await viewModel.OpenHistoryInternalAsync(WindowActivationMode.ForceForeground);
                     break;
                 case ExternalCallAction.forbiddenhotkey:
                     viewModel.ToggleGlobalHotkey();
@@ -227,7 +257,15 @@ public class ExternalCallService(
                 default:
                     break;
             }
-        });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "External action execution failed: {Action}", action);
+        }
+        finally
+        {
+            _externalCallLock.Release();
+        }
     }
 
     /// <summary>
@@ -237,7 +275,7 @@ public class ExternalCallService(
     /// <returns></returns>
     private ExternalCallAction GetExternalCallAction(string source)
     {
-        return Enum.TryParse<ExternalCallAction>(source, out var eAction)
+        return Enum.TryParse<ExternalCallAction>(source, true, out var eAction)
             ? eAction
             : throw new Exception("path does not meet the requirements");
     }
@@ -273,6 +311,7 @@ public enum ExternalCallAction
     translate_force,
     translate_input,
     translate_ocr,
+    translate_ocr_image,
     translate_crossword,
     translate_mousehook,
     translate_replace,

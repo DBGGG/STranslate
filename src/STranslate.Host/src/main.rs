@@ -3,13 +3,13 @@ mod commands;
 use clap::{Arg, ArgAction, Command};
 
 use crate::commands::{
-    BackupMode, StartMode, TaskAction, handle_backup_command, handle_start_command,
-    handle_task_command, handle_update_command,
+    BackupMode, PortableMode, StartMode, TaskAction, handle_backup_command,
+    handle_portable_command, handle_start_command, handle_task_command, handle_update_command,
 };
 
 fn main() {
     let matches = Command::new("z_stranslate_host")
-        .version("1.0.2")
+        .version("1.0.3")
         .author("ZGGSONG <zggsong@foxmail.com>")
         .about("程序更新和后台启动工具")
         .subcommand(
@@ -96,6 +96,21 @@ fn main() {
                         .value_name("SECONDS")
                         .help("启动延迟（秒）")
                         .default_value("0")
+                        .value_parser(clap::value_parser!(u64)),
+                )
+                .arg(
+                    Arg::new("wait-pid")
+                        .long("wait-pid")
+                        .value_name("PID")
+                        .help("启动前等待退出的进程ID")
+                        .value_parser(clap::value_parser!(u32)),
+                )
+                .arg(
+                    Arg::new("wait-timeout")
+                        .long("wait-timeout")
+                        .value_name("SECONDS")
+                        .help("等待进程退出超时时间（秒）")
+                        .default_value("10")
                         .value_parser(clap::value_parser!(u64)),
                 )
                 .arg(
@@ -266,6 +281,83 @@ fn main() {
                         .help("显示详细输出"),
                 ),
         )
+        .subcommand(
+            Command::new("portable")
+                .about("切换便携模式并迁移目录")
+                .arg(
+                    Arg::new("mode")
+                        .short('m')
+                        .long("mode")
+                        .value_name("MODE")
+                        .help("切换模式：enable 或 disable")
+                        .value_parser(clap::value_parser!(PortableMode))
+                        .required(true),
+                )
+                .arg(
+                    Arg::new("source")
+                        .short('s')
+                        .long("source")
+                        .value_name("PATH")
+                        .help("迁移源目录")
+                        .required(true),
+                )
+                .arg(
+                    Arg::new("target")
+                        .short('t')
+                        .long("target")
+                        .value_name("PATH")
+                        .help("迁移目标目录")
+                        .required(true),
+                )
+                .arg(
+                    Arg::new("delay")
+                        .short('d')
+                        .long("delay")
+                        .value_name("SECONDS")
+                        .help("执行前延迟秒数")
+                        .default_value("0")
+                        .value_parser(clap::value_parser!(u64)),
+                )
+                .arg(
+                    Arg::new("restart-target")
+                        .short('p')
+                        .long("restart-target")
+                        .value_name("PATH_OR_TASK")
+                        .help("重启目标（可执行文件路径）")
+                        .required(true),
+                )
+                .arg(
+                    Arg::new("info-file")
+                        .short('i')
+                        .long("info-file")
+                        .value_name("FILE")
+                        .help("写入提示信息的文件路径")
+                        .required(true),
+                )
+                .arg(
+                    Arg::new("success-message")
+                        .short('w')
+                        .long("success-message")
+                        .value_name("TEXT")
+                        .help("迁移成功提示文案")
+                        .required(true),
+                )
+                .arg(
+                    Arg::new("failure-prefix")
+                        .short('f')
+                        .long("failure-prefix")
+                        .value_name("TEXT")
+                        .help("迁移失败前缀文案")
+                        .required(true),
+                )
+                .arg(
+                    Arg::new("verbose")
+                        .short('v')
+                        .long("verbose")
+                        .action(ArgAction::SetTrue)
+                        .help("显示详细输出"),
+                ),
+        )
         .get_matches();
 
     match matches.subcommand() {
@@ -293,8 +385,14 @@ fn main() {
                 std::process::exit(1);
             }
         }
+        Some(("portable", sub_matches)) => {
+            if let Err(e) = handle_portable_command(sub_matches) {
+                eprintln!("❌ 便携模式操作失败: {}", e);
+                std::process::exit(1);
+            }
+        }
         _ => {
-            eprintln!("❌ 请指定命令: update、start、task 或 backup");
+            eprintln!("❌ 请指定命令: update、start、task、backup 或 portable");
             eprintln!("使用 --help 查看帮助信息");
             std::process::exit(1);
         }

@@ -40,6 +40,8 @@
     <sys:String x:Key="General_HideWhenDeactivated">失去焦点时自动隐藏主窗口</sys:String>
     <sys:String x:Key="General_WindowPosition">主窗口位置</sys:String>
     <sys:String x:Key="General_WindowAlign">主窗口在显示器上的位置</sys:String>
+    <sys:String x:Key="General_MainWindowMaxHeightRatio">主窗口最大高度（屏幕比例）</sys:String>
+    <sys:String x:Key="General_MainWindowMaxHeightRatioDescription">控制主窗口最大高度占当前显示器工作区的比例（60%~100%）。</sys:String>
     <sys:String x:Key="General_DisableGlobalHotkeys">禁用全局热键</sys:String>
     <sys:String x:Key="General_IgnoreHotkeysOnFullscreen">全屏模式下忽略热键</sys:String>
     <sys:String x:Key="General_IgnoreHotkeysOnFullscreenDescription">优先级低于「禁用全局热键」一般用于游戏场景</sys:String>
@@ -49,33 +51,51 @@
     <sys:String x:Key="General_DefaultSourceLanguage">默认源语言</sys:String>
     <sys:String x:Key="General_DefaultSourceLanguageDescription">当自动检测失败时使用此语言。</sys:String>
     <sys:String x:Key="General_FirstLanguage">第一语言</sys:String>
-    <sys:String x:Key="General_FirstLanguageDescription">当目标语言设为自动且源语言为其他语言（包含第二语言）时目标语言使用第一语言。</sys:String>
+    <sys:String x:Key="General_FirstLanguageDescription">当任意翻译场景（包括图片翻译）的目标语言设为自动，且源语言为其他语言（包含第二语言）时，目标语言使用第一语言。</sys:String>
     <sys:String x:Key="General_SecondLanguage">第二语言</sys:String>
-    <sys:String x:Key="General_SecondLanguageDescription">当目标语言设为自动且源语言为第一语言时目标语言使用第二语言。</sys:String>
+    <sys:String x:Key="General_SecondLanguageDescription">当任意翻译场景（包括图片翻译）的目标语言设为自动，且源语言为第一语言时，目标语言使用第二语言。</sys:String>
     <sys:String x:Key="General_HttpTimeout">超时时间</sys:String>
     <sys:String x:Key="General_HttpTimeoutDescription">请求网络请求的超时时间，单位：秒。</sys:String>
+    <sys:String x:Key="General_UseClipboardOutput">文本输出使用剪贴板</sys:String>
+    <sys:String x:Key="General_UseClipboardOutputDescription">开启后将通过剪贴板 Ctrl+V 输出文本；关闭时使用键盘模拟输入（默认）。</sys:String>
     <sys:String x:Key="General_TranslateOnPaste">粘贴立即翻译</sys:String>
     <sys:String x:Key="General_TranslateOnPasteDescription">输入框内粘贴文本立即执行翻译。</sys:String>
     <sys:String x:Key="General_AutoTranslate">自动翻译</sys:String>
     <sys:String x:Key="General_AutoTranslateDescription">输入内容等待一定时间后自动执行翻译。</sys:String>
+    <sys:String x:Key="General_InstantTranslate">立即翻译</sys:String>
+    <sys:String x:Key="General_InstantTranslateDescription">以下操作触发后将立即执行翻译。</sys:String>
     <sys:String x:Key="General_AutoTranslateButtonVisible">在主界面上显示自动翻译按钮</sys:String>
+    <sys:String x:Key="General_AutoTranslateOnPromptChanged">切换提示词后自动翻译</sys:String>
+    <sys:String x:Key="General_AutoTranslateOnPromptChangedDescription">切换AI翻译服务的提示词后，立即重新执行翻译。</sys:String>
     <sys:String x:Key="General_AutoTranslateDelay">自动翻译延时</sys:String>
     <sys:String x:Key="General_AutoTranslateDelayDescription">输入内容等待时间，单位：毫秒。</sys:String>
     <sys:String x:Key="General_LineBreakHandleType">取词换行处理</sys:String>
     <sys:String x:Key="General_LineBreakHandleTypeDescription" xml:space="preserve">包括划词、截图翻译、剪贴板、静默OCR取词场景的换行处理&#10;「移除多余换行」主要针对PDF取词场景，移除多余换行和断句，但是对非PDF取词可能有影响</sys:String>
+    <sys:String x:Key="General_TextSeparatorHandleType">取词分隔符处理</sys:String>
+    <sys:String x:Key="General_TextSeparatorHandleTypeDescription">将英文/数字标识符中的下划线或中划线转换为空格，默认不处理。</sys:String>
+    <sys:String x:Key="General_TextSeparatorHandleScopes">分隔符处理生效范围</sys:String>
+    <sys:String x:Key="General_TextSeparatorHandleScopesDescription">选择哪些取词入口应用分隔符处理。未选择时保持原文本。</sys:String>
+    <sys:String x:Key="General_SelectedTextFetchTimeout">取词超时时间</sys:String>
+    <sys:String x:Key="General_SelectedTextFetchTimeoutDescription">模拟复制后轮询剪贴板新文本的超时时间，单位：毫秒。写入成功会立即返回；部分 PDF 软件写入较慢时可适当调高。</sys:String>
+    <sys:String x:Key="General_SelectedTextFetchTimeoutPlaceholder">500</sys:String>
+    <sys:String x:Key="General_CrosswordFetchFailedFallbackTarget">划词取词失败回退目标</sys:String>
+    <sys:String x:Key="General_CrosswordFetchFailedFallbackTargetDescription">划词取词失败后，选择回退到输入翻译或仅显示主界面。</sys:String>
     <sys:String x:Key="General_ImageQuality">图片质量</sys:String>
     <sys:String x:Key="General_ImageQualityDescription">处理图片时质量调整，在线OCR服务可能会限制图片大小</sys:String>
     <sys:String x:Key="General_DoubleClickTrayFunction">双击托盘程序功能</sys:String>
     <sys:String x:Key="General_DoubleClickTrayFunctionDescription">选择除「无操作」的其他操作会禁用托盘单击切换主窗口显示功能</sys:String>
     <sys:String x:Key="General_Language">语言</sys:String>
-    <sys:String x:Key="General_ScreenshotTranslateInImage">图片内翻译</sys:String>
-    <sys:String x:Key="General_ScreenshotTranslateInImageDescription">截图翻译时是否启用图片内翻译</sys:String>
-    <sys:String x:Key="General_ScreenshotTranslateInImageButtonVisible">在主界面上显示「截图翻译」|「启用/禁用图片内翻译」按钮</sys:String>
-    <sys:String x:Key="General_ScreenshotTranslateButtonToolTip" xml:space="preserve">「鼠标点击」截图翻译&#10;「Ctrl+鼠标点击」开启/关闭图片内翻译</sys:String>
+    <sys:String x:Key="General_ScreenshotTranslate">截图翻译</sys:String>
+    <sys:String x:Key="General_ImageTranslate">图片翻译</sys:String>
+    <sys:String x:Key="General_ShowScreenshotTranslate">显示截图翻译</sys:String>
+    <sys:String x:Key="General_ShowScreenshotTranslateDescription">在主界面上显示「截图翻译」按钮，截图并识别结果填充到输入框后执行翻译</sys:String>
+    <sys:String x:Key="General_ShowImageTranslate">显示图片翻译</sys:String>
+    <sys:String x:Key="General_ShowImageTranslateDescription">在主界面上显示「图片翻译」按钮，截图后在图片上进行翻译</sys:String>
     <sys:String x:Key="General_ShowScreenshotAuxiliaryLines">截图辅助线</sys:String>
     <sys:String x:Key="General_ShowScreenshotAuxiliaryLinesDescription">截图时是否显示辅助线，帮助更精确地选择区域。</sys:String>
     <sys:String x:Key="General_HideNotifyIcon">隐藏托盘图标</sys:String>
     <sys:String x:Key="General_ShowScreenshotItemInNotifyIconMenu">托盘显示截图翻译选项</sys:String>
+    <sys:String x:Key="General_ShowImageTranslateItemInNotifyIconMenu">托盘显示图片翻译选项</sys:String>
     <sys:String x:Key="General_ShowOcrItemInNotifyIconMenu">托盘显示文本识别选项</sys:String>
     <sys:String x:Key="General_ShowQrCodeItemInNotifyIconMenu">托盘显示二维码选项</sys:String>
     <sys:String x:Key="General_ColorTheme">颜色主题</sys:String>
@@ -92,6 +112,16 @@
     <sys:String x:Key="General_ShowHistoryNavigationDescription">主界面是否显示向前/向后历史翻译记录导航图标。</sys:String>
     <sys:String x:Key="General_ShowOcrButton">显示OCR按钮</sys:String>
     <sys:String x:Key="General_ShowOcrButtonDescription">在主界面标题栏显示OCR按钮。</sys:String>
+    <sys:String x:Key="General_ShowClipboardMonitor">显示剪贴板监听按钮</sys:String>
+    <sys:String x:Key="General_ShowClipboardMonitorDescription">在主界面标题栏显示剪贴板监听切换按钮。</sys:String>
+    <sys:String x:Key="General_MainHeaderConfig">主界面标题栏按钮布局</sys:String>
+    <sys:String x:Key="General_MainHeaderConfigDescription">上面一行是预览区，下面一行是控件池。把控件从控件池拖到预览区就会显示，拖回控件池就会隐藏；也可以在预览区里拖动调整顺序。</sys:String>
+    <sys:String x:Key="General_MainHeaderPreview">预览区（主界面 Header）</sys:String>
+    <sys:String x:Key="General_MainHeaderPool">控件池（未显示）</sys:String>
+    <sys:String x:Key="General_MainHeaderShowAll">全部显示</sys:String>
+    <sys:String x:Key="General_MainHeaderHideAll">全部隐藏</sys:String>
+    <sys:String x:Key="General_ShowCloseButton">显示关闭按钮</sys:String>
+    <sys:String x:Key="General_ShowCloseButtonDescription">在主界面标题栏设置按钮右侧显示关闭按钮，功能等同于 Esc 键。</sys:String>
     <sys:String x:Key="General_FontSize">字体大小</sys:String>
     <sys:String x:Key="General_FontSizeDescription">调整除「右键菜单」外的所有字体大小</sys:String>
     <sys:String x:Key="General_OutputShowingControl">输出控件显示控制</sys:String>
@@ -109,6 +139,23 @@
     <sys:String x:Key="General_CopyAfterTranslationNotAutomatic">非「自动执行」服务翻译后复制</sys:String>
     <sys:String x:Key="General_CopyAfterOcr">OCR后复制</sys:String>
     <sys:String x:Key="General_CopyAfterOcrDescription">针对所有文本识别场景，识别后自动复制识别结果</sys:String>
+    <sys:String x:Key="General_FocusInputAfterScreenshotTranslate">截图翻译后激活输入框</sys:String>
+    <sys:String x:Key="General_FocusInputAfterScreenshotTranslateDescription">开启后，截图翻译完成会显示主窗口并聚焦输入框。关闭后，若主窗口已置顶，则只更新结果、不抢焦点；非置顶时仍会恢复显示。</sys:String>
+    <sys:String x:Key="General_PluginMarketCdnSource">插件市场CDN源</sys:String>
+    <sys:String x:Key="General_PluginMarketCdnSourceDescription">选择插件市场数据的CDN加速服务（GitHub直链无缓存延迟）</sys:String>
+    <sys:String x:Key="General_CustomCdnUrl">自定义CDN URL</sys:String>
+    <sys:String x:Key="General_CustomCdnUrlDescription">输入自定义CDN地址模板，使用 {author}, {repo}, {branch}, {path} 作为占位符</sys:String>
+
+    <!--  // PluginMarketCdnSourceType //  -->
+    <sys:String x:Key="PluginMarketCdnSourceTypeJsDelivr">jsDelivr CDN（推荐）</sys:String>
+    <sys:String x:Key="PluginMarketCdnSourceTypeGitHubRaw">GitHub 直链</sys:String>
+    <sys:String x:Key="PluginMarketCdnSourceTypeCustom">自定义</sys:String>
+
+    <!--  // PluginDownloadProxyType //  -->
+    <sys:String x:Key="PluginDownloadProxyTypeGitHub">GitHub 直连</sys:String>
+    <sys:String x:Key="PluginDownloadProxyTypeGhProxyMirror">mirror.ghproxy.com</sys:String>
+    <sys:String x:Key="PluginDownloadProxyTypeGhProxyNet">ghproxy.net</sys:String>
+    <sys:String x:Key="PluginDownloadProxyTypeCustom">自定义</sys:String>
 
     <!--  // Hotkey Page //  -->
     <sys:String x:Key="GlobalHotkeys">全局热键</sys:String>
@@ -119,18 +166,30 @@
     <sys:String x:Key="Hotkey_InputTranslateDescription">打开STranslate并清空内容等待输入翻译的快捷键。</sys:String>
     <sys:String x:Key="Hotkey_CrosswordTranslate">划词翻译</sys:String>
     <sys:String x:Key="Hotkey_CrosswordTranslateDescription">鼠标选中文本触发翻译的快捷键。</sys:String>
+    <sys:String x:Key="Hotkey_CrosswordTranslateIsUseCtrlSameC">是否使用 Ctrl+C+C 进行划词翻译？</sys:String>
+    <sys:String x:Key="Hotkey_CrosswordTranslateTraditional">传统快捷键</sys:String>
+    <sys:String x:Key="Hotkey_CrosswordTranslateByCtrlSameCDescription">鼠标选中文本快速按下 Ctrl+C+C 进行取词翻译。</sys:String>
+    <sys:String x:Key="CrosswordTranslateFetchFailed">划词取词失败，已打开输入翻译</sys:String>
+    <sys:String x:Key="CrosswordTranslateFetchFailedShowWindow">划词取词失败，已打开主界面显示</sys:String>
     <sys:String x:Key="Hotkey_MouseHookTranslate">监听鼠标划词</sys:String>
     <sys:String x:Key="Hotkey_MouseHookTranslateDescription">开启/关闭监听鼠标划词选中文本触发翻译的快捷键。</sys:String>
     <sys:String x:Key="Hotkey_ReplaceTranslate">替换翻译</sys:String>
     <sys:String x:Key="Hotkey_ReplaceTranslateDescription">鼠标选中文本触发翻译并替换原文本的快捷键。</sys:String>
     <sys:String x:Key="Hotkey_ScreenshotTranslate">截图翻译</sys:String>
     <sys:String x:Key="Hotkey_ScreenshotTranslateDescription">截图选择区域后识别文本并翻译的快捷键。</sys:String>
+    <sys:String x:Key="Hotkey_ImageTranslate">图片翻译</sys:String>
+    <sys:String x:Key="Hotkey_ImageTranslateDescription">截图选择区域后识别在图片上进行翻译的快捷键。</sys:String>
     <sys:String x:Key="Hotkey_SilentOcr">静默OCR</sys:String>
     <sys:String x:Key="Hotkey_SilentOcrDescription">用于截图选取区域，识别文字并将结果设置到剪贴板的快捷键。</sys:String>
     <sys:String x:Key="Hotkey_SilentTts">静默TTS</sys:String>
     <sys:String x:Key="Hotkey_SilentTtsDescription">用于通过鼠标朗读选中的中文文本的快捷键。</sys:String>
     <sys:String x:Key="Hotkey_Ocr">OCR</sys:String>
     <sys:String x:Key="Hotkey_OcrDescription">用于调用OCR窗口进行文本识别的快捷键。</sys:String>
+    <sys:String x:Key="Hotkey_ClipboardMonitor">剪贴板监听翻译</sys:String>
+    <sys:String x:Key="Hotkey_ClipboardMonitorDescription">开启/关闭剪贴板监听，监听开启时剪贴板变化会自动翻译。</sys:String>
+    <sys:String x:Key="ClipboardMonitorStarted">剪贴板监听已开启</sys:String>
+    <sys:String x:Key="ClipboardMonitorStopped">剪贴板监听已关闭</sys:String>
+    <sys:String x:Key="ClipboardMonitorButtonTooltip">剪贴板监听翻译</sys:String>
     <sys:String x:Key="Hotkey_CancelOrHide">取消 | 隐藏界面</sys:String>
     <sys:String x:Key="Hotkey_CancelOrHideDescription">取消进行中的请求 | 隐藏界面。适用于所有窗口。</sys:String>
     <sys:String x:Key="Hotkey_MainWindow">主窗口快捷键</sys:String>
@@ -151,7 +210,8 @@
     <sys:String x:Key="Hotkey_SwitchImage">切换渲染图/标注图</sys:String>
     <sys:String x:Key="Hotkey_QrCode">识别二维码</sys:String>
     <sys:String x:Key="Hotkey_QrCodeDescription">该热键仅支持OCR窗口</sys:String>
-
+    <sys:String x:Key="Hotkey_IncrementalTranslate">增量翻译</sys:String>
+    <sys:String x:Key="Hotkey_IncrementalTranslateDescription" xml:space="preserve">按住快捷键划词可持续追加内容，松开鼠标即刻翻译。&#10;仅支持单个按键，不包含 Win/Alt/Ctrl/Shift</sys:String>
     <!--  // Translation Page //  -->
     <sys:String x:Key="ReplaceService">替换翻译</sys:String>
     <sys:String x:Key="ImTranService">图片翻译</sys:String>
@@ -159,6 +219,8 @@
     <sys:String x:Key="SpecialServiceInfo">拖拽左侧服务至此或者右键选择以启用</sys:String>
     <sys:String x:Key="AsReplaceSvc">替换翻译</sys:String>
     <sys:String x:Key="AsImTranSvc">图片翻译</sys:String>
+    <sys:String x:Key="ImTranOcrService">图片翻译OCR</sys:String>
+    <sys:String x:Key="AsImTranOcrSvc">图片翻译OCR</sys:String>
     <sys:String x:Key="TransExecMode">翻译模式</sys:String>
     <sys:String x:Key="TransExecAutomatic">自动执行</sys:String>
     <sys:String x:Key="TransExecManual">手动执行</sys:String>
@@ -174,6 +236,25 @@
     <sys:String x:Key="SearchPlugin">搜索插件</sys:String>
     <sys:String x:Key="SearchPluginToolTip">按 Ctrl+F 搜索插件</sys:String>
     <sys:String x:Key="DropInstallPlugin">松开安装插件</sys:String>
+
+    <!--  // Plugin Market //  -->
+    <sys:String x:Key="PluginMarketRefresh">刷新</sys:String>
+    <sys:String x:Key="PluginMarketDownload">下载</sys:String>
+    <sys:String x:Key="PluginMarketUpgrade">升级</sys:String>
+    <sys:String x:Key="PluginMarketInstalled">已安装</sys:String>
+    <sys:String x:Key="PluginMarketDownloading">下载中</sys:String>
+    <sys:String x:Key="Back">返回</sys:String>
+    <sys:String x:Key="PluginMarketLoading">加载中...</sys:String>
+    <sys:String x:Key="PluginMarketLoadError">加载失败</sys:String>
+    <sys:String x:Key="PluginMarketNoPlugins">暂无插件</sys:String>
+    <sys:String x:Key="PluginMarketCurrentVersion">当前版本</sys:String>
+    <sys:String x:Key="PluginMarketLatestVersion">最新版本</sys:String>
+    <sys:String x:Key="PluginActionDownload">下载插件</sys:String>
+    <sys:String x:Key="PluginActionUpgrade">升级插件</sys:String>
+    <sys:String x:Key="PluginActionInstalled">已安装</sys:String>
+    <sys:String x:Key="PluginActionPendingRestart">待重启</sys:String>
+    <sys:String x:Key="PluginActionWebsite">项目主页</sys:String>
+    <sys:String x:Key="PluginDownloadCancelled">下载已取消</sys:String>
 
     <!--  // Network Page //  -->
     <sys:String x:Key="Network_EnableExternalCall">启用外部调用</sys:String>
@@ -250,12 +331,36 @@
     <sys:String x:Key="Total">共</sys:String>
     <sys:String x:Key="Item">项</sys:String>
     <sys:String x:Key="HistorySearch">请输入或按 Ctrl+F 搜索历史</sys:String>
+    <sys:String x:Key="ExportHistory">导出历史</sys:String>
+    <sys:String x:Key="BatchDeleteHistory">批量删除历史</sys:String>
+    <sys:String x:Key="BatchDeleteHistoryConfirm">确定要删除选中的 {0} 条历史记录吗？</sys:String>
+    <sys:String x:Key="BatchDeleteHistoryResult">批量删除完成：成功 {0} 条，失败 {1} 条</sys:String>
+    <sys:String x:Key="DeleteAllHistoryConfirm">确定要删除全部 {0} 条历史记录吗？</sys:String>
+    <sys:String x:Key="AllHistoryActions">全部操作</sys:String>
+    <sys:String x:Key="DeleteAllHistory">删除全部</sys:String>
+    <sys:String x:Key="ExportAllHistory">导出全部</sys:String>
+    <sys:String x:Key="HistorySelectAllOrClear">全选/取消</sys:String>
+    <sys:String x:Key="NoHistorySelected">未选择任何历史记录</sys:String>
+    <sys:String x:Key="ExportSuccess">导出成功</sys:String>
+    <sys:String x:Key="ExportFailed">导出失败</sys:String>
 
     <!--  // About Page //  -->
     <sys:String x:Key="UserDataLocation">用户数据位置</sys:String>
     <sys:String x:Key="UserDataLocationDescription">用户设置和已安装的插件保存在用户数据文件夹中。此位置可能因是否处于便携模式而异。</sys:String>
     <sys:String x:Key="OpenDirectory">打开目录</sys:String>
-    <sys:String x:Key="DeveloperTools">开发工具</sys:String>
+    <sys:String x:Key="PortableModeDescription">在程序目录与系统漫游目录之间切换用户数据存储位置。切换后会迁移数据并自动重启应用。</sys:String>
+    <sys:String x:Key="PortableModeStatePortable">便携模式</sys:String>
+    <sys:String x:Key="PortableModeStateRoaming">漫游模式</sys:String>
+    <sys:String x:Key="EnablePortableMode">启用便携模式</sys:String>
+    <sys:String x:Key="DisablePortableMode">关闭便携模式</sys:String>
+    <sys:String x:Key="ConfirmRestartAndEnablePortableMode">是否确认重启并启用便携模式</sys:String>
+    <sys:String x:Key="ConfirmRestartAndDisablePortableMode">是否确认重启并关闭便携模式</sys:String>
+    <sys:String x:Key="PortableModeDisableRoamingConflict">检测到漫游目录已存在，请先手动处理后再重试</sys:String>
+    <sys:String x:Key="PortableModeEnableSuccess">便携模式启用成功</sys:String>
+    <sys:String x:Key="PortableModeDisableSuccess">便携模式已关闭，已恢复漫游模式</sys:String>
+    <sys:String x:Key="PortableModeEnableFailed">便携模式启用失败</sys:String>
+    <sys:String x:Key="PortableModeDisableFailed">便携模式关闭失败</sys:String>
+    <sys:String x:Key="PortableModeHostStartFailed">便携模式操作启动失败：{0}</sys:String>
     <sys:String x:Key="ClearCache">清理缓存</sys:String>
     <sys:String x:Key="ClearLogs">清理日志</sys:String>
     <sys:String x:Key="SettingsDirectory">设置目录</sys:String>
@@ -291,6 +396,8 @@
     <sys:String x:Key="RestoreBackup">恢复备份</sys:String>
     <sys:String x:Key="Version">版本</sys:String>
     <sys:String x:Key="CheckUpdate">检查更新</sys:String>
+    <sys:String x:Key="General_AutoCheckUpdate">自动检查更新</sys:String>
+    <sys:String x:Key="General_AutoCheckUpdateDescription">定时检查新版本，发现后通过托盘通知提醒。</sys:String>
     <sys:String x:Key="NoCheckUpdataInDev">开发模式下禁止检查更新</sys:String>
     <sys:String x:Key="Donate">赞助</sys:String>
     <sys:String x:Key="OfficialWebsite">官网</sys:String>
@@ -330,8 +437,9 @@
     <!--  // Input Control //  -->
     <sys:String x:Key="RemoveLineBreak">移除换行</sys:String>
     <sys:String x:Key="RemoveSpace">移除空格</sys:String>
-    <sys:String x:Key="UseSettingLang">识别失败</sys:String>
     <sys:String x:Key="IdentifiedCache">缓存</sys:String>
+    <sys:String x:Key="IdentifiedUnknown">未知</sys:String>
+    <sys:String x:Key="IdentifiedCacheTooltip">识别结果来自历史缓存</sys:String>
     <sys:String x:Key="CopyServiceNotFound">未找到第 {0} 项服务</sys:String>
     <sys:String x:Key="CopiedToClipboard">已复制「{0}」结果</sys:String>
     <sys:String x:Key="SaveToVocabulary">添加到生词本</sys:String>
@@ -345,8 +453,9 @@
     <sys:String x:Key="CopyAsPascalCase">复制成大驼峰</sys:String>
     <sys:String x:Key="CopyAsCamelCase">复制成小驼峰</sys:String>
     <sys:String x:Key="CopyAsSnakeCase">复制成蛇形</sys:String>
-    <sys:String x:Key="InsertText">插入文本</sys:String>
+    <sys:String x:Key="InsertText">插入文本 (按住 Shift 以小写插入)</sys:String>
     <sys:String x:Key="BackTranslation">回译</sys:String>
+    <sys:String x:Key="CloseTransBack">关闭回译结果</sys:String>
     <sys:String x:Key="SaveToVocabularyWithNote">添加到生词本(含笔记)</sys:String>
 
     <sys:String x:Key="ExecuteTranslation">执行翻译</sys:String>
@@ -380,6 +489,7 @@
     <!--  // Hotkeys //  -->
     <sys:String x:Key="None">无</sys:String>
     <sys:String x:Key="HotkeyFunctionPrompt">按下您想要用于此功能的键。</sys:String>
+    <sys:String x:Key="HotkeySingleKeyMode">单键模式</sys:String>
     <sys:String x:Key="RegisterHotkeyFailed">未能注册快捷键「{0}」。请重试或查看日志以获取详细信息</sys:String>
     <sys:String x:Key="UnregisterHotkeyFailed">未能取消注册快捷键「{0}」。请重试或查看日志以获取详细信息</sys:String>
     <sys:String x:Key="BindHotkey">绑定热键</sys:String>
@@ -387,6 +497,7 @@
     <sys:String x:Key="HotkeyOverwriteFailed">热键覆盖时解绑失败，已恢复。</sys:String>
     <sys:String x:Key="HotkeyUnavailableUneditable">此热键为「{0}」保留，无法使用。请选择其他热键。</sys:String>
     <sys:String x:Key="HotkeyUnavailableEditable">此热键已被「{0}」使用。如果按「覆盖」，则会将其从「{0}」中删除。</sys:String>
+    <sys:String x:Key="HotkeyReservedClipboardCopy">Ctrl+C 是系统复制和划词取词的保留热键，无法绑定为全局热键。请选择其他热键。</sys:String>
 
     <!--  // Enum //  -->
     <sys:String x:Key="StartModeNormal">正常启动</sys:String>
@@ -428,6 +539,7 @@
     <sys:String x:Key="LangEnumPolish">波兰语</sys:String>
     <sys:String x:Key="LangEnumDutch">荷兰语</sys:String>
     <sys:String x:Key="LangEnumUkrainian">乌克兰语</sys:String>
+    <sys:String x:Key="LangEnumUzbek">乌兹别克语</sys:String>
 
     <sys:String x:Key="LanguageDetectorTypeLocal">本地识别</sys:String>
     <sys:String x:Key="LanguageDetectorTypeBaidu">百度识别</sys:String>
@@ -442,12 +554,33 @@
     <sys:String x:Key="LineBreakHandleTypeRemoveExtraLineBreak">移除多余换行</sys:String>
     <sys:String x:Key="LineBreakHandleTypeRemoveAllLineBreak">移除所有换行</sys:String>
     <sys:String x:Key="LineBreakHandleTypeRemoveAllLineBreakWithoutSpace">移除所有换行（非空格填充）</sys:String>
+    <sys:String x:Key="TextSeparatorHandleTypeNone">不处理分隔符</sys:String>
+    <sys:String x:Key="TextSeparatorHandleTypeUnderscore">处理下划线</sys:String>
+    <sys:String x:Key="TextSeparatorHandleTypeHyphen">处理中划线</sys:String>
+    <sys:String x:Key="TextSeparatorHandleTypeUnderscoreAndHyphen">处理下划线和中划线</sys:String>
+    <sys:String x:Key="TextSeparatorHandleScopeNone">不启用</sys:String>
+    <sys:String x:Key="TextSeparatorHandleScopeMouseHook">监听鼠标划词</sys:String>
+    <sys:String x:Key="TextSeparatorHandleScopeCrossword">划词翻译 / Ctrl+C+C</sys:String>
+    <sys:String x:Key="TextSeparatorHandleScopeIncremental">增量翻译</sys:String>
+    <sys:String x:Key="TextSeparatorHandleScopeClipboardMonitor">剪贴板监听</sys:String>
+    <sys:String x:Key="TextSeparatorHandleScopeScreenshotTranslate">截图翻译</sys:String>
+    <sys:String x:Key="TextSeparatorHandleScopeSilentOcr">静默OCR</sys:String>
+    <sys:String x:Key="CrosswordFetchFailedFallbackTargetInputTranslate">输入翻译</sys:String>
+    <sys:String x:Key="CrosswordFetchFailedFallbackTargetShowWindow">显示主界面</sys:String>
 
     <sys:String x:Key="PluginTypeAll">所有插件</sys:String>
     <sys:String x:Key="PluginTypeTranslate">文本翻译</sys:String>
     <sys:String x:Key="PluginTypeOcr">文本识别</sys:String>
     <sys:String x:Key="PluginTypeTts">语音合成</sys:String>
     <sys:String x:Key="PluginTypeVocabulary">生词本</sys:String>
+
+    <sys:String x:Key="PluginMarketSettings">高级配置</sys:String>
+    <sys:String x:Key="PluginMarketSettingsChanged">CDN 源设置已更改，是否立即刷新插件列表？</sys:String>
+    <sys:String x:Key="PluginDownloadProxy">下载代理</sys:String>
+    <sys:String x:Key="PluginDownloadProxyDescription">用于加速 GitHub Releases 下载</sys:String>
+    <sys:String x:Key="PluginDownloadProxyUrl">自定义代理 URL</sys:String>
+    <sys:String x:Key="PluginDownloadProxyUrlDescription">输入自定义代理地址</sys:String>
+    <sys:String x:Key="PluginDownloadProxyUrlExample">例如：https://mirror.ghproxy.com/</sys:String>
 
     <sys:String x:Key="ProxyTypeSystem">系统代理</sys:String>
     <sys:String x:Key="ProxyTypeHttp">HTTP代理</sys:String>
@@ -463,6 +596,7 @@
 
     <sys:String x:Key="WindowScreenTypeRememberLastLaunchLocation">记住上次的位置</sys:String>
     <sys:String x:Key="WindowScreenTypeCursor">鼠标光标所在显示器</sys:String>
+    <sys:String x:Key="WindowScreenTypeFollowMouse">跟随鼠标</sys:String>
     <sys:String x:Key="WindowScreenTypeFocus">聚焦窗口所在显示器</sys:String>
     <sys:String x:Key="WindowScreenTypePrimary">主显示器</sys:String>
     <sys:String x:Key="WindowScreenTypeCustom">自定义显示器</sys:String>
@@ -535,6 +669,9 @@
     <sys:String x:Key="PluginUpgradeConfirm">插件 {0} 已安装版本 {1}，新版本 {2}。是否要升级？</sys:String>
     <sys:String x:Key="PluginUpgradeSuccess">插件升级准备就绪，重启后生效</sys:String>
     <sys:String x:Key="PluginUpgradeFailed">插件升级失败</sys:String>
+    <sys:String x:Key="RestartNow">立即重启</sys:String>
+    <sys:String x:Key="RestartLater">稍后手动重启</sys:String>
+    <sys:String x:Key="PendingRestart">待重启</sys:String>
     <sys:String x:Key="BatchOperation">批量操作</sys:String>
     <sys:String x:Key="DeleteSelected">删除选中</sys:String>
     <sys:String x:Key="NoPluginSelected">未选择插件</sys:String>
@@ -591,6 +728,7 @@
 
     <sys:String x:Key="RecognizeLanguage">识别语言</sys:String>
     <sys:String x:Key="TranslateLanguage">翻译语言</sys:String>
+    <sys:String x:Key="ImageTranslateLanguageIndependentToolTip">图片翻译窗口的翻译语言与主窗口相互独立，修改这里不会影响主窗口。</sys:String>
     <sys:String x:Key="ImTranSettingsToolTip" xml:space="preserve">直接鼠标左击-&gt;独立窗口配置&#10;Ctrl+鼠标左击-&gt;文本识别配置&#10;Alt+鼠标左击-&gt;文本翻译配置</sys:String>
 
     <!--  // Snackbar Messages //  -->
@@ -605,8 +743,23 @@
     <sys:String x:Key="OperationFailed">操作失败</sys:String>
     <sys:String x:Key="OcrFailed">文字识别失败</sys:String>
     <sys:String x:Key="TtsFailed">语音合成失败</sys:String>
+    <sys:String x:Key="TtsCancelled">朗读已取消</sys:String>
+    <sys:String x:Key="TtsServiceNotFound">未配置语音合成服务，请前往「设置-服务-语音合成」配置</sys:String>
+    <sys:String x:Key="VocabularyServiceNotFound">未配置生词本服务，请前往「设置-服务-生词本」配置</sys:String>
     <sys:String x:Key="ImtransFailed">图片翻译失败</sys:String>
     <sys:String x:Key="NoTranslateService">未找到可用的翻译服务</sys:String>
+    <sys:String x:Key="GoToSettings">点击前往</sys:String>
+    <sys:String x:Key="ImageTranslateServiceNotFoundTitle">无法获取图片翻译服务</sys:String>
+    <sys:String x:Key="ImageTranslateServiceNotFoundMessage">当前未配置启用图片翻译服务，请先前往「设置-服务-文本翻译」配置后使用该功能</sys:String>
+    <sys:String x:Key="OcrServiceNotFoundTitle">无法获取OCR服务</sys:String>
+    <sys:String x:Key="OcrServiceNotFoundMessage">当前未配置或者启用OCR服务，请先前往「设置-服务-文本识别」配置后使用该功能</sys:String>
+    <sys:String x:Key="ImageTranslateOcrServiceNotFoundTitle">无法获取图片翻译 OCR 服务</sys:String>
+    <sys:String x:Key="ImageTranslateOcrServiceNotFoundMessage">当前未配置图片翻译 OCR 服务且无可用 OCR 服务，请先前往「设置-服务-文本识别」进行配置</sys:String>
+    <sys:String x:Key="ReplaceTranslateServiceNotFoundTitle">无法获取替换翻译服务</sys:String>
+    <sys:String x:Key="ReplaceTranslateServiceNotFoundMessage">当前未配置启用替换翻译服务，请先前往「设置-服务-文本翻译」配置后使用该功能</sys:String>
+    <sys:String x:Key="LanguageDetectionFailed">语言检测失败</sys:String>
+    <sys:String x:Key="NoTextRecognized">未识别到文本</sys:String>
+    <sys:String x:Key="NoTextRecognizedMessage" xml:space="preserve">请确保选中要翻译的文本&#10;若问题仍然存在请尝试以管理员权限重启软件</sys:String>
     <sys:String x:Key="NavigateFailed">已经到头了</sys:String>
     <sys:String x:Key="NoValidPluginFile">无SPKG文件</sys:String>
 
@@ -626,11 +779,15 @@
     <sys:String x:Key="NoUpdateInfoFound">未找到更新信息。</sys:String>
     <sys:String x:Key="AlreadyLatestVersion">您已是最新版本。</sys:String>
     <sys:String x:Key="UpdateAvailable">有可用更新</sys:String>
+    <sys:String x:Key="UpdateOpenAboutButton">前往更新</sys:String>
+    <sys:String x:Key="UpdateAvailableTrayMessage">发现新版本 {0}，点击按钮可前往 设置-关于 页面更新。</sys:String>
     <sys:String x:Key="NewVersionFound">发现新版本 {0}。是否下载？</sys:String>
     <sys:String x:Key="PortableDataMoveError">STranslate 无法将您的用户配置数据移动到新更新版本。&#10;请手动将您的配置数据文件夹从 {0} 移动到 {1}</sys:String>
     <sys:String x:Key="UpdateReady">更新准备就绪</sys:String>
     <sys:String x:Key="UpdateFailed">更新失败</sys:String>
     <sys:String x:Key="UpdateFailedMessage">应用程序更新失败。请检查您的网络连接。</sys:String>
+    <sys:String x:Key="UpdateChangelogLoading">正在加载更新内容...</sys:String>
+    <sys:String x:Key="UpdateChangelogLoadFailedMarkdown">更新内容加载失败。你可以[点击这里查看完整更新日志]({0})。</sys:String>
     <sys:String x:Key="NewVersionTips">新版本 {0} 已可用，是否重新启动 STranslate 以使用更新？</sys:String>
 
     <!--  // LLM Service Configurations for plugins //  -->

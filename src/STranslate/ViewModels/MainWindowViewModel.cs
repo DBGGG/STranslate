@@ -11,11 +11,15 @@ using STranslate.Services;
 using STranslate.ViewModels.Pages;
 using STranslate.Views;
 using STranslate.Views.Pages;
+using System.ComponentModel;
+using System.Drawing;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Threading;
+using Windows.Win32;
 
 namespace STranslate.ViewModels;
 
@@ -31,6 +35,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     private readonly INotification _notification;
     private double _cacheLeft;
     private double _cacheTop;
+    private bool _isAdjustingWindowPositionForContent;
 
     public TranslateService TranslateService { get; }
     public OcrService OcrService { get; }
@@ -39,6 +44,9 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
 
     private readonly SqlService _sqlService;
     private readonly DebounceExecutor _debounceExecutor;
+    private ClipboardMonitor? _clipboardMonitor;
+    private bool _forceShowInputForInputTranslate;
+    private bool _skipShowForNextTranslate;
 
     public Settings Settings { get; }
     public HotkeySettings HotkeySettings { get; }
@@ -60,6 +68,10 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         HotkeySettings hotkeySettings)
     {
         DataProvider = dataProvider;
+        IdentifiedLanguageOptions = DataProvider.LangEnums
+            .Where(x => x.Value != LangEnum.Auto)
+            .Cast<DropdownDataGeneric<LangEnum>>()
+            .ToList();
         _logger = logger;
         _i18n = i18n;
         _audioPlayer = audioPlayer;
@@ -76,11 +88,15 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
 
         _debounceExecutor = new();
         _i18n.OnLanguageChanged += OnLanguageChanged;
+        Settings.PropertyChanged += OnSettingsPropertyChanged;
     }
 
     private void OnLanguageChanged()
     {
-        if (!UACHelper.IsUserAdministrator()) return;
+        ApplyIdentifiedLanguageState(_identifiedLanguageState);
+
+        if (!UACHelper.IsUserAdministrator())
+            return;
 
         TrayToolTip = $"{Constant.AppName} # {_i18n.GetTranslation("Administrator")}";
     }
@@ -99,6 +115,17 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     /// </summary>
     private const int ContextMenuCloseAnimationDelay = 150;
 
+    private sealed record IdentifiedLanguageState(IdentifiedLanguageStateKind Kind, LangEnum? Language = null)
+    {
+        public static IdentifiedLanguageState Empty { get; } = new(IdentifiedLanguageStateKind.None);
+    }
+
+    private sealed record TranslationLanguageContext(
+        LangEnum CacheSource,
+        LangEnum CacheTarget,
+        LangEnum EffectiveSource,
+        LangEnum EffectiveTarget);
+
     [ObservableProperty]
     public partial ImageSource TrayIcon { get; set; } = BitmapImageLoc.AppIcon;
 
@@ -112,12 +139,51 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     public partial bool IsIdentifyProcessing { get; set; } = false;
 
     [ObservableProperty]
+    public partial bool IsClipboardMonitoring { get; set; } = false;
+
+    [ObservableProperty]
+    public partial double MainWindowEffectiveMaxHeight { get; set; } = 800;
+
+    public bool IsInputActuallyHidden
+    {
+        get => Settings.HideInput && !_forceShowInputForInputTranslate;
+        set
+        {
+            if (value == IsInputActuallyHidden)
+                return;
+
+            ExitInputTranslateMode();
+            Settings.HideInput = value;
+        }
+    }
+
+    public bool IsInputBoxVisible => !IsInputActuallyHidden;
+
+    public bool IsLanguageSelectControlVisible =>
+        !IsInputActuallyHidden || !Settings.HideInputWithLangSelectControl;
+
+    [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(SingleTranslateCommand))]
     [NotifyCanExecuteChangedFor(nameof(TranslateCommand))]
+    [NotifyCanExecuteChangedFor(nameof(SelectIdentifiedLanguageCommand))]
+    [NotifyCanExecuteChangedFor(nameof(SelectLanguageDetectorCommand))]
     public partial string InputText { get; set; } = string.Empty;
 
     [ObservableProperty]
     public partial string IdentifiedLanguage { get; set; } = string.Empty;
+
+    [ObservableProperty]
+    public partial LangEnum SelectedIdentifiedLanguage { get; set; } = LangEnum.Auto;
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(SelectIdentifiedLanguageCommand))]
+    public partial bool CanSelectIdentifiedLanguage { get; set; } = false;
+
+    public IReadOnlyList<DropdownDataGeneric<LangEnum>> IdentifiedLanguageOptions { get; }
+
+    private IdentifiedLanguageState _identifiedLanguageState = IdentifiedLanguageState.Empty;
+
+    public IdentifiedLanguageStateKind CurrentIdentifiedLanguageState => _identifiedLanguageState.Kind;
 
     public bool IsTopmost
     {
@@ -125,7 +191,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         set
         {
             if (IsMouseHook && !value)
-                iNKORE.UI.WPF.Modern.Controls.MessageBox.Show("监听鼠标划词时窗口必须置顶", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+                AppMessageBox.Show("监听鼠标划词时窗口必须置顶", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
             else
                 SetProperty(ref field, value);
         }
@@ -142,29 +208,46 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     /// </summary>
     /// <param name="text"></param>
     /// <param name="force">不为空则跳过缓存</param>
-    public void ExecuteTranslate(string text, string? force = null)
+    public void ExecuteTranslate(
+        string text,
+        string? force = null,
+        WindowActivationMode activationMode = WindowActivationMode.Normal)
     {
+        ExitInputTranslateMode();
         CancelAllOperations();
+        ResetTranslationLanguageState();
         InputText = text;
         TranslateCommand.Execute(force);
-        Show();
+
+        var skipShow = _skipShowForNextTranslate;
+        _skipShowForNextTranslate = false;
+
+        if (skipShow)
+            return;
+
+        Show(activationMode);
         UpdateCaret();
     }
 
     [RelayCommand(IncludeCancelCommand = true, CanExecute = nameof(CanTranslate))]
-    private async Task TranslateAsync(string? force, CancellationToken cancellationToken)
+    private async Task TranslateAsync(object? force, CancellationToken cancellationToken)
     {
         // 取消防抖执行器中的待执行任务
         _debounceExecutor.Cancel();
 
-        ResetAllServices();
+        LangEnum? forcedSourceLanguage = force is LangEnum language && language != LangEnum.Auto
+            ? language
+            : null;
 
-        IdentifiedLanguage = string.Empty;
+        ResetAllServices();
+        ApplyIdentifiedLanguageState(forcedSourceLanguage.HasValue
+            ? CreateDetectedIdentifiedLanguageState(forcedSourceLanguage.Value)
+            : IdentifiedLanguageState.Empty);
 
         // force 空则优先检查缓存
         var checkCacheFirst = force == null;
 
-        var history = await ExecuteTranslateAsync(checkCacheFirst, cancellationToken);
+        var history = await ExecuteTranslateAsync(checkCacheFirst, forcedSourceLanguage, cancellationToken);
 
         // 翻译后自动复制
         if (Settings.CopyAfterTranslation != CopyAfterTranslation.NoAction)
@@ -185,7 +268,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
                     var textToCopy = data.TransResult?.Text ?? data.DictResult?.Text;
                     if (!string.IsNullOrWhiteSpace(textToCopy))
                     {
-                        Utilities.SetText(textToCopy);
+                        ClipboardHelper.SetText(textToCopy);
                         _snackbar.ShowSuccess(string.Format(_i18n.GetTranslation("CopiedToClipboard"), service.DisplayName));
                     }
                 }
@@ -194,7 +277,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
 
         #region 历史记录处理
 
-        if (Settings.HistoryLimit > 0 && history != null)
+        if (Settings.HistoryLimit > 0 && history != null && history.Data.Count != 0)
         {
             // 按服务启用顺序排序
             var enabledServices = TranslateService.Services.Where(x => x.IsEnabled).ToList();
@@ -236,7 +319,10 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     [RelayCommand(IncludeCancelCommand = true, CanExecute = nameof(CanTranslate))]
     private async Task SingleTranslateAsync(Service service, CancellationToken cancellationToken)
     {
-        var history = await _sqlService.GetDataAsync(InputText, Settings.SourceLang.ToString(), Settings.TargetLang.ToString());
+        var history = await _sqlService.GetDataAsync(
+            InputText,
+            Settings.SourceLang.ToString(),
+            Settings.TargetLang.ToString());
 
         if (service.Plugin is IDictionaryPlugin dictionaryPlugin)
         {
@@ -246,18 +332,11 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
 
             if (Settings.CopyAfterTranslationNotAutomatic)
             {
-                Utilities.SetText(result.Text);
+                ClipboardHelper.SetText(result.Text);
                 _snackbar.ShowSuccess(string.Format(_i18n.GetTranslation("CopiedToClipboard"), service.DisplayName));
             }
 
-            history ??= new HistoryModel
-            {
-                Time = DateTime.Now,
-                SourceText = InputText,
-                SourceLang = Settings.SourceLang.ToString(),
-                TargetLang = Settings.TargetLang.ToString(),
-                Data = []
-            };
+            history ??= CreateHistoryModel(Settings.SourceLang, Settings.TargetLang);
             // 添加新的历史数据记录并执行字典查询
             history.Data.Add(new(service) { DictResult = result });
             return;
@@ -266,28 +345,20 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         if (service.Plugin is not ITranslatePlugin plugin || plugin.TransResult.IsProcessing)
             return;
 
-        var (_, source, target) = await LanguageDetector
-            .GetLanguageAsync(InputText, cancellationToken, StartProcess, CompleteProcess, FinishProcess)
-            .ConfigureAwait(false);
+        var context = await ResolveTranslationLanguageContextAsync(null, cancellationToken).ConfigureAwait(false);
 
-        var translateResult = await ExecuteAsync(plugin, source, target, cancellationToken).ConfigureAwait(false);
+        var translateResult = await ExecuteAsync(plugin, context.EffectiveSource, context.EffectiveTarget, cancellationToken).ConfigureAwait(false);
         if (!plugin.TransResult.IsSuccess)
             return;
 
         if (Settings.CopyAfterTranslationNotAutomatic)
         {
-            Utilities.SetText(translateResult.Text);
+            ClipboardHelper.SetText(translateResult.Text);
             _snackbar.ShowSuccess(string.Format(_i18n.GetTranslation("CopiedToClipboard"), service.DisplayName));
         }
 
-        history ??= new HistoryModel
-        {
-            Time = DateTime.Now,
-            SourceText = InputText,
-            SourceLang = Settings.SourceLang.ToString(),
-            TargetLang = Settings.TargetLang.ToString(),
-            Data = []
-        };
+        history ??= CreateHistoryModel(context);
+        ApplyEffectiveLanguages(history, context.EffectiveSource, context.EffectiveTarget);
         // 添加新的历史数据记录
         var historyData = history.GetData(service);
         if (historyData == null)
@@ -295,11 +366,16 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             historyData = new HistoryData(service);
             history.Data.Add(historyData);
         }
+        UpdateHistoryServiceSnapshot(historyData, service);
         historyData.TransResult = translateResult;
 
         if (service.Options?.AutoBackTranslation ?? false)
         {
-            var backResult = await ExecuteBackAsync(plugin, target, source, cancellationToken).ConfigureAwait(false);
+            var backResult = await ExecuteBackAsync(
+                plugin,
+                context.EffectiveTarget,
+                context.EffectiveSource,
+                cancellationToken).ConfigureAwait(false);
             historyData.TransBackResult = backResult;
         }
 
@@ -317,17 +393,30 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         if (service.Plugin is not ITranslatePlugin plugin || plugin.TransBackResult.IsProcessing)
             return;
 
-        var history = await _sqlService.GetDataAsync(InputText, Settings.SourceLang.ToString(), Settings.TargetLang.ToString());
+        var history = await _sqlService.GetDataAsync(
+            InputText,
+            Settings.SourceLang.ToString(),
+            Settings.TargetLang.ToString());
 
-        var (_, source, target) = await LanguageDetector
-            .GetLanguageAsync(InputText, cancellationToken, StartProcess, CompleteProcess, FinishProcess)
-            .ConfigureAwait(false);
+        var context = await ResolveTranslationLanguageContextAsync(null, cancellationToken).ConfigureAwait(false);
 
-        var backResult = await ExecuteBackAsync(plugin, target, source, cancellationToken).ConfigureAwait(false);
+        if (history != null)
+            ApplyEffectiveLanguages(history, context.EffectiveSource, context.EffectiveTarget);
+
+        var backResult = await ExecuteBackAsync(
+            plugin,
+            context.EffectiveTarget,
+            context.EffectiveSource,
+            cancellationToken).ConfigureAwait(false);
         if (!plugin.TransResult.IsSuccess)
             return;
 
-        history?.GetData(service)?.TransBackResult = backResult;
+        var historyData = history?.GetData(service);
+        if (historyData != null)
+        {
+            UpdateHistoryServiceSnapshot(historyData, service);
+            historyData.TransBackResult = backResult;
+        }
 
         if (Settings.HistoryLimit > 0 && history != null)
             await _sqlService.InsertOrUpdateDataAsync(history, (long)Settings.HistoryLimit).ConfigureAwait(false);
@@ -350,9 +439,31 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         ExecuteTranslate(text);
     }
 
+    [RelayCommand(CanExecute = nameof(CanSelectIdentifiedLanguageForCurrentText))]
+    private async Task SelectIdentifiedLanguageAsync(LangEnum language)
+    {
+        CancelAllOperations();
+
+        TranslateCommand.Execute(language);
+        Show();
+        UpdateCaret();
+        await Task.CompletedTask;
+    }
+
+    [RelayCommand(CanExecute = nameof(CanSelectLanguageDetectorForCurrentText))]
+    private void SelectLanguageDetector(LanguageDetectorType detector)
+    {
+        Settings.LanguageDetector = detector;
+        CancelAllOperations();
+
+        TranslateCommand.Execute("force");
+        Show();
+        UpdateCaret();
+    }
+
     #region Translation Execution Logic
 
-    private async Task<HistoryModel?> ExecuteTranslateAsync(bool checkCacheFirst, CancellationToken cancellationToken)
+    private async Task<HistoryModel?> ExecuteTranslateAsync(bool checkCacheFirst, LangEnum? forcedSourceLanguage, CancellationToken cancellationToken)
     {
         var enabledSvcs = TranslateService.Services.Where(x => x.IsEnabled && x.Options?.ExecMode == ExecutionMode.Automatic).ToList();
         if (enabledSvcs.Count == 0)
@@ -364,10 +475,13 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         // 尝试从缓存加载
         if (checkCacheFirst && Settings.HistoryLimit > 0)
         {
-            history = await _sqlService.GetDataAsync(InputText, Settings.SourceLang.ToString(), Settings.TargetLang.ToString());
+            history = await _sqlService.GetDataAsync(
+                InputText,
+                Settings.SourceLang.ToString(),
+                Settings.TargetLang.ToString());
             if (history != null)
             {
-                IdentifiedLanguage = _i18n.GetTranslation("IdentifiedCache");
+                ApplyIdentifiedLanguageState(CreateCacheIdentifiedLanguageState(history));
                 uncachedSvcs = await PopulateResultsFromCacheAsync(history, enabledSvcs, cancellationToken);
             }
         }
@@ -379,20 +493,48 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         }
 
         // 对未缓存的服务执行实时翻译
-        var (_, source, target) = await LanguageDetector.GetLanguageAsync(InputText, cancellationToken, StartProcess, CompleteProcess, FinishProcess);
+        var context = await ResolveTranslationLanguageContextAsync(forcedSourceLanguage, cancellationToken);
 
-        history ??= new HistoryModel
+        history ??= CreateHistoryModel(context);
+        ApplyEffectiveLanguages(history, context.EffectiveSource, context.EffectiveTarget);
+
+        await ExecuteTranslationForServicesAsync(
+            uncachedSvcs,
+            context.EffectiveSource,
+            context.EffectiveTarget,
+            history,
+            cancellationToken);
+
+        return history;
+    }
+
+    private HistoryModel CreateHistoryModel(TranslationLanguageContext context)
+        => CreateHistoryModel(context.CacheSource, context.CacheTarget);
+
+    private HistoryModel CreateHistoryModel(LangEnum source, LangEnum target)
+    {
+        return new HistoryModel
         {
             Time = DateTime.Now,
             SourceText = InputText,
-            SourceLang = Settings.SourceLang.ToString(),
-            TargetLang = Settings.TargetLang.ToString(),
+            SourceLang = source.ToString(),
+            TargetLang = target.ToString(),
             Data = []
         };
+    }
 
-        await ExecuteTranslationForServicesAsync(uncachedSvcs, source, target, history, cancellationToken);
+    private static void ApplyEffectiveLanguages(HistoryModel history, LangEnum source, LangEnum target)
+    {
+        history.EffectiveSourceLang = source.ToString();
+        history.EffectiveTargetLang = target.ToString();
+    }
 
-        return history;
+    /// <summary>
+    /// 统一维护历史记录里的服务名称快照，确保历史展示和导出不依赖当前服务配置。
+    /// </summary>
+    private static void UpdateHistoryServiceSnapshot(HistoryData historyData, Service service)
+    {
+        historyData.ServiceDisplayName = service.DisplayName;
     }
 
     /// <summary>
@@ -511,6 +653,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         // 添加新的历史数据记录
         var historyData = new HistoryData(service);
         history.Data.Add(historyData);
+        UpdateHistoryServiceSnapshot(historyData, service);
         historyData.TransResult = translateResult;
 
         // 执行反向翻译（如果需要且主翻译成功）
@@ -529,7 +672,11 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             return;
 
         var historyData = history.GetData(service);
-        historyData?.TransBackResult = backResult;
+        if (historyData != null)
+        {
+            UpdateHistoryServiceSnapshot(historyData, service);
+            historyData.TransBackResult = backResult;
+        }
     }
 
     private async Task ProcessDictionaryPluginAsync(Service service, IDictionaryPlugin plugin,
@@ -546,6 +693,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         // 添加新的历史数据记录并执行字典查询
         var historyData = new HistoryData(service);
         history.Data.Add(historyData);
+        UpdateHistoryServiceSnapshot(historyData, service);
         historyData.DictResult = result;
     }
 
@@ -650,7 +798,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         else
             _snackbar.ShowInfo(_i18n.GetTranslation("AutoTranslateDisabled"));
     }
-
+    
     #endregion
 
     #endregion
@@ -664,47 +812,17 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         if (ocrPlugin == null)
             return;
 
-        if (Settings.ScreenshotTranslateInImage && TranslateService.ImageTranslateService == null)
-        {
-            _notification.ShowWithButton(
-                 "无法获取图片翻译服务",
-                 "点击前往",
-                 () =>
-                 {
-                     Application.Current.Dispatcher.Invoke(() =>
-                     {
-                         SingletonWindowOpener
-                             .Open<SettingsWindow>()
-                             .Activate();
-
-                         Application.Current.Windows
-                                 .OfType<SettingsWindow>()
-                                 .First()
-                                 .Navigate(nameof(TranslatePage));
-                     });
-                 },
-                 "当前未配置启用图片翻译服务，请先前往「设置-服务-文本翻译」配置后使用该功能");
-            return;
-        }
-
         using var bitmap = await _screenshot.GetScreenshotAsync();
         await ScreenshotTranslateHandlerAsync(bitmap, ocrPlugin, cancellationToken);
     }
 
-    public async Task ScreenshotTranslateHandlerAsync(System.Drawing.Bitmap? bitmap, IOcrPlugin? ocrPlugin = default, CancellationToken cancellationToken = default)
+    public async Task ScreenshotTranslateHandlerAsync(Bitmap? bitmap, IOcrPlugin? ocrPlugin = default, CancellationToken cancellationToken = default)
     {
         if (bitmap == null) return;
 
         ocrPlugin ??= GetOcrSvcAndNotify();
         if (ocrPlugin == null)
             return;
-
-        if (Settings.ScreenshotTranslateInImage)
-        {
-            var window = await SingletonWindowOpener.OpenAsync<ImageTranslateWindow>();
-            await ((ImageTranslateWindowViewModel)window.DataContext).ExecuteCommand.ExecuteAsync(bitmap);
-            return;
-        }
 
         try
         {
@@ -716,9 +834,10 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
                 return;
 
             if (Settings.CopyAfterOcr)
-                Utilities.SetText(result.Text);
+                ClipboardHelper.SetText(result.Text);
 
-            ExecuteTranslate(Utilities.LinebreakHandler(result.Text, Settings.LineBreakHandleType));
+            _skipShowForNextTranslate = !Settings.FocusInputAfterScreenshotTranslate && IsTopmost;
+            ExecuteTranslate(HandleCapturedText(result.Text, TextSeparatorHandleScope.ScreenshotTranslate));
         }
         catch (TaskCanceledException)
         {
@@ -726,13 +845,47 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         }
         catch (Exception ex)
         {
-            _notification.Show(_i18n.GetTranslation("Prompt"), $"{_i18n.GetTranslation("OcrFailed")}\n{ex.Message}");
+            Show();
+            _snackbar.ShowError($"{_i18n.GetTranslation("OcrFailed")}\n{ex.Message}");
             _logger.LogError(ex, "OCR execution failed");
         }
         finally
         {
             CursorHelper.Restore();
         }
+    }
+
+    [RelayCommand]
+    private async Task ImageTranslateAsync()
+    {
+        var ocrPlugin = GetImageTranslateOcrSvcAndNotify();
+        if (ocrPlugin == null)
+            return;
+
+        if (TranslateService.ImageTranslateService == null)
+        {
+            Helper.PromptConfigureService(
+                _i18n.GetTranslation("ImageTranslateServiceNotFoundTitle"),
+                _i18n.GetTranslation("ImageTranslateServiceNotFoundMessage"),
+                nameof(TranslatePage));
+            return;
+        }
+
+
+        using var bitmap = await _screenshot.GetScreenshotAsync();
+        await ImageTranslateHandlerAsync(bitmap, ocrPlugin);
+    }
+
+    public async Task ImageTranslateHandlerAsync(Bitmap? bitmap, IOcrPlugin? ocrPlugin = default)
+    {
+        if (bitmap == null) return;
+
+        ocrPlugin ??= GetImageTranslateOcrSvcAndNotify();
+        if (ocrPlugin == null)
+            return;
+
+        var window = await SingletonWindowOpener.OpenAsync<ImageTranslateWindow>();
+        await ((ImageTranslateWindowViewModel)window.DataContext).ExecuteCommand.ExecuteAsync(bitmap);
     }
 
     [RelayCommand]
@@ -745,7 +898,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         await OcrHandlerAsync(bitmap);
     }
 
-    public async Task OcrHandlerAsync(System.Drawing.Bitmap? bitmap)
+    public async Task OcrHandlerAsync(Bitmap? bitmap)
     {
         if (bitmap == null) return;
         var window = await SingletonWindowOpener.OpenAsync<OcrWindow>();
@@ -762,7 +915,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         await QrCodeHandlerAsync(bitmap);
     }
 
-    public async Task QrCodeHandlerAsync(System.Drawing.Bitmap? bitmap)
+    public async Task QrCodeHandlerAsync(Bitmap? bitmap)
     {
         if (bitmap == null) return;
         var window = await SingletonWindowOpener.OpenAsync<OcrWindow>();
@@ -780,7 +933,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         await SilentOcrHandlerAsync(bitmap, ocrPlugin, cancellationToken);
     }
 
-    public async Task SilentOcrHandlerAsync(System.Drawing.Bitmap? bitmap, IOcrPlugin? ocrPlugin = default, CancellationToken cancellationToken = default)
+    public async Task SilentOcrHandlerAsync(Bitmap? bitmap, IOcrPlugin? ocrPlugin = default, CancellationToken cancellationToken = default)
     {
         if (bitmap == null) return;
 
@@ -794,7 +947,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             var result = await ocrPlugin.RecognizeAsync(new OcrRequest(data, LangEnum.Auto), cancellationToken);
             if (result.IsSuccess && !string.IsNullOrEmpty(result.Text))
             {
-                Utilities.SetText(result.Text);
+                ClipboardHelper.SetText(HandleSilentOcrText(result.Text));
             }
         }
         catch (TaskCanceledException)
@@ -803,7 +956,8 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         }
         catch (Exception ex)
         {
-            _notification.Show(_i18n.GetTranslation("Prompt"), $"{_i18n.GetTranslation("OcrFailed")}\n{ex.Message}");
+            Show();
+            _snackbar.ShowError($"{_i18n.GetTranslation("OcrFailed")}\n{ex.Message}");
             _logger.LogError(ex, "OCR execution failed");
         }
         finally
@@ -817,24 +971,25 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         var svc = OcrService.GetActiveSvc<IOcrPlugin>();
         if (svc == null)
         {
-            _notification.ShowWithButton(
-                "无法获取OCR服务",
-                "点击前往",
-                () =>
-                {
-                    Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        SingletonWindowOpener
-                            .Open<SettingsWindow>()
-                            .Activate();
+            Helper.PromptConfigureService(
+                _i18n.GetTranslation("OcrServiceNotFoundTitle"),
+                _i18n.GetTranslation("OcrServiceNotFoundMessage"),
+                nameof(OcrPage));
+            return default;
+        }
 
-                        Application.Current.Windows
-                                .OfType<SettingsWindow>()
-                                .First()
-                                .Navigate(nameof(OcrPage));
-                    });
-                },
-                "当前未配置或者启用OCR服务，请先前往「设置-服务-文本识别」配置后使用该功能");
+        return svc;
+    }
+
+    private IOcrPlugin? GetImageTranslateOcrSvcAndNotify()
+    {
+        var svc = OcrService.GetImageTranslateOcrSvcOrDefault();
+        if (svc == null)
+        {
+            Helper.PromptConfigureService(
+                _i18n.GetTranslation("ImageTranslateOcrServiceNotFoundTitle"),
+                _i18n.GetTranslation("ImageTranslateOcrServiceNotFoundMessage"),
+                nameof(OcrPage));
             return default;
         }
 
@@ -850,33 +1005,67 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     {
         var ttsSvc = TtsService.GetActiveSvc<ITtsPlugin>();
         if (ttsSvc == null)
+        {
+            Helper.PromptConfigureService(
+                _i18n.GetTranslation("Prompt"),
+                _i18n.GetTranslation("TtsServiceNotFound"),
+                nameof(TtsPage));
             return;
+        }
 
-        await ttsSvc.PlayAudioAsync(text, cancellationToken);
+        try
+        {
+            await ttsSvc.PlayAudioAsync(text, cancellationToken);
+        }
+        catch (TaskCanceledException)
+        {
+            _snackbar.ShowInfo(_i18n.GetTranslation("TtsCancelled"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "TTS播放失败");
+            _snackbar.ShowError(_i18n.GetTranslation("TtsFailed"));
+        }
     }
 
     [RelayCommand(IncludeCancelCommand = true)]
     private async Task PlayAudioUrlAsync(string url, CancellationToken cancellationToken)
-        => await _audioPlayer.PlayAsync(url, cancellationToken);
+    {
+        try
+        {
+            await _audioPlayer.PlayAsync(url, cancellationToken);
+        }
+        catch (TaskCanceledException)
+        {
+            _snackbar.ShowInfo(_i18n.GetTranslation("TtsCancelled"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "音频播放失败");
+            _snackbar.ShowError(_i18n.GetTranslation("TtsFailed"));
+        }
+    }
 
     [RelayCommand(IncludeCancelCommand = true)]
     private async Task SilentTtsAsync(CancellationToken cancellationToken)
     {
-        var ttsSvc = TtsService.GetActiveSvc<ITtsPlugin>();
-        if (ttsSvc == null)
-            return;
-
         var (success, text) = await GetTextAsync();
         if (!success || string.IsNullOrWhiteSpace(text))
             return;
-        await SilentTtsHandlerAsync(text, ttsSvc, cancellationToken);
+        await SilentTtsHandlerAsync(text, default, cancellationToken);
     }
 
     public async Task SilentTtsHandlerAsync(string text, ITtsPlugin? ttsSvc = default, CancellationToken cancellationToken = default)
     {
         ttsSvc ??= TtsService.GetActiveSvc<ITtsPlugin>();
         if (ttsSvc == null)
+        {
+            Helper.PromptConfigureService(
+                _i18n.GetTranslation("Prompt"),
+                _i18n.GetTranslation("TtsServiceNotFound"),
+                nameof(TtsPage));
             return;
+        }
 
         try
         {
@@ -902,7 +1091,13 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     {
         var vocabularySvc = VocabularyService.GetActiveSvc<IVocabularyPlugin>();
         if (vocabularySvc == null)
+        {
+            Helper.PromptConfigureService(
+                _i18n.GetTranslation("Prompt"),
+                _i18n.GetTranslation("VocabularyServiceNotFound"),
+                nameof(VocabularyPage));
             return;
+        }
 
         var result = await vocabularySvc.SaveAsync(text, cancellationToken);
         if (result.IsSuccess)
@@ -915,7 +1110,14 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     private async Task SaveToVocabularyWithNoteAsync(Service service, CancellationToken cancellationToken)
     {
         var vocabularySvc = VocabularyService.GetActiveSvc<IVocabularyPlugin>();
-        if (vocabularySvc == null) return;
+        if (vocabularySvc == null)
+        {
+            Helper.PromptConfigureService(
+                _i18n.GetTranslation("Prompt"),
+                _i18n.GetTranslation("VocabularyServiceNotFound"),
+                nameof(VocabularyPage));
+            return;
+        }
 
         if (service.Plugin is not ITranslatePlugin plugin || plugin.TransResult.IsProcessing)
             return;
@@ -1004,7 +1206,10 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         else
         {
             // 否则，获取当前输入文本对应的历史记录
-            var current = await _sqlService.GetDataAsync(InputText, Settings.SourceLang.ToString(), Settings.TargetLang.ToString());
+            var current = await _sqlService.GetDataAsync(
+                InputText,
+                Settings.SourceLang.ToString(),
+                Settings.TargetLang.ToString());
             if (current != null)
             {
                 var history = isNext ? await _sqlService.GetNextAsync(current) : await _sqlService.GetPreviousAsync(current);
@@ -1017,10 +1222,57 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
 
     #endregion
 
+    #region Incretemental Translate
+
+    public void OnIncKeyPressed()
+    {
+        Show();
+        IsTopmost = true;
+        UpdateCacheText();
+
+        _ = MouseKeyHelper.StartMouseTextSelectionAsync(() => Settings.SelectedTextFetchTimeoutMs);
+        MouseKeyHelper.MouseTextSelected += OnMouseTextSelectedIncretemental;
+    }
+
+    public void OnIncKeyReleased()
+    {
+        IsTopmost = false;
+        MouseKeyHelper.StopMouseTextSelection();
+        MouseKeyHelper.MouseTextSelected -= OnMouseTextSelectedIncretemental;
+
+        if (string.IsNullOrWhiteSpace(InputText) || _oldText == InputText)
+            return;
+
+        Show();
+        // 执行翻译
+        TranslateCommand.Execute(null);
+        UpdateCaret();
+        UpdateCacheText();
+    }
+
+    private string _oldText = string.Empty;
+
+    private void UpdateCacheText()
+    {
+        _oldText = InputText;
+    }
+
+    private void OnMouseTextSelectedIncretemental(string text)
+    {
+        _ = Application.Current.Dispatcher.InvokeAsync(() =>
+        {
+            InputText += HandleCapturedText(text, TextSeparatorHandleScope.Incremental);
+        });
+    }
+
+    #endregion
+
     #region Mouse Hook Feature
 
     [RelayCommand]
     private void ToggleMouseHookTranslate() => IsMouseHook = !IsMouseHook;
+
+    partial void OnIsMouseHookChanged(bool value) => _ = ToggleMouseHookAsync(value);
 
     private async Task ToggleMouseHookAsync(bool enable)
     {
@@ -1028,7 +1280,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         {
             Show();
             IsTopmost = true;
-            await MouseKeyHelper.StartMouseTextSelectionAsync();
+            await MouseKeyHelper.StartMouseTextSelectionAsync(() => Settings.SelectedTextFetchTimeoutMs);
             MouseKeyHelper.MouseTextSelected += OnMouseTextSelected;
         }
         else
@@ -1043,7 +1295,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     {
         _ = Application.Current.Dispatcher.InvokeAsync(() =>
         {
-            ExecuteTranslate(Utilities.LinebreakHandler(text, Settings.LineBreakHandleType));
+            ExecuteTranslate(HandleCapturedText(text, TextSeparatorHandleScope.MouseHook));
         });
     }
 
@@ -1051,10 +1303,75 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     private async Task CrosswordTranslateAsync()
     {
         var (success, text) = await GetTextAsync();
-        if (success && !string.IsNullOrWhiteSpace(text))
+        if (!success || string.IsNullOrWhiteSpace(text))
         {
-            ExecuteTranslate(Utilities.LinebreakHandler(text, Settings.LineBreakHandleType));
+            HandleCrosswordFetchFailed();
+            return;
         }
+
+        ExecuteTranslate(HandleCapturedText(text, TextSeparatorHandleScope.Crossword));
+    }
+
+    public void CrosswordTranslateByCtrlSameCHandler()
+    {
+        _ = Application.Current.Dispatcher.InvokeAsync(() =>
+        {
+            var text = ClipboardHelper.GetText()?.Trim();
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                HandleCrosswordFetchFailed();
+                return;
+            }
+
+            ExecuteTranslate(HandleCapturedText(text, TextSeparatorHandleScope.Crossword));
+        });
+    }
+
+    [RelayCommand]
+    private void ToggleClipboardMonitor() => IsClipboardMonitoring = !IsClipboardMonitoring;
+
+    partial void OnIsClipboardMonitoringChanged(bool value) => ToggleClipboardMonitorHandler(value);
+
+    private void ToggleClipboardMonitorHandler(bool value)
+    {
+        if (value)
+        {
+            StartClipboardMonitor();
+        }
+        else
+        {
+            StopClipboardMonitor();
+        }
+    }
+
+    private void StartClipboardMonitor()
+    {
+        _clipboardMonitor ??= new ClipboardMonitor(MainWindow);
+        _clipboardMonitor.OnClipboardTextChanged += OnClipboardTextChanged;
+        _clipboardMonitor.Start();
+        _notification.Show(
+            _i18n.GetTranslation("Hotkey_ClipboardMonitor"),
+            _i18n.GetTranslation("ClipboardMonitorStarted"));
+    }
+
+    private void StopClipboardMonitor()
+    {
+        if (_clipboardMonitor != null)
+        {
+            _clipboardMonitor.OnClipboardTextChanged -= OnClipboardTextChanged;
+            _clipboardMonitor.Stop();
+        }
+        _notification.Show(
+            _i18n.GetTranslation("Hotkey_ClipboardMonitor"),
+            _i18n.GetTranslation("ClipboardMonitorStopped"));
+    }
+
+    private void OnClipboardTextChanged(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return;
+
+        App.Current.Dispatcher.Invoke(() =>
+            ExecuteTranslate(HandleCapturedText(text, TextSeparatorHandleScope.ClipboardMonitor)));
     }
 
     [RelayCommand(IncludeCancelCommand = true)]
@@ -1062,25 +1379,10 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     {
         if (TranslateService.ReplaceService?.Plugin is not ITranslatePlugin transPlugin)
         {
-            _notification.ShowWithButton(
-                "无法获取替换翻译服务",
-                "点击前往",
-                () =>
-                {
-                    Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        SingletonWindowOpener
-                            .Open<SettingsWindow>()
-                            .Activate();
-
-                        Application.Current.Windows
-                                .OfType<SettingsWindow>()
-                                .First()
-                                .Navigate(nameof(TranslatePage));
-                    });
-                },
-                "当前未配置启用替换翻译服务，请先前往「设置-服务-文本翻译」配置后使用该功能");
-
+            Helper.PromptConfigureService(
+                _i18n.GetTranslation("ReplaceTranslateServiceNotFoundTitle"),
+                _i18n.GetTranslation("ReplaceTranslateServiceNotFoundMessage"),
+                nameof(TranslatePage));
             return;
         }
 
@@ -1094,7 +1396,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             if (!isSuccess)
             {
                 _logger.LogWarning($"Language detection failed for text: {text}");
-                _notification.Show(_i18n.GetTranslation("Prompt"), "语言检测失败");
+                _snackbar.ShowWarning(_i18n.GetTranslation("LanguageDetectionFailed"));
             }
             var result = new TranslateResult();
             await transPlugin.TranslateAsync(new TranslateRequest(text, source, target), result, cancellationToken).ConfigureAwait(false);
@@ -1133,7 +1435,12 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         Show();
     }
 
-    public void Show()
+    /// <summary>
+    /// 初始化主窗口布局约束，避免窗口首次显示时沿用过期的高度上限。
+    /// </summary>
+    public void InitializeWindowLayoutConstraints() => UpdateMainWindowMaxHeightConstraint();
+
+    public void Show(WindowActivationMode activationMode = WindowActivationMode.Normal)
     {
         if (Settings.MainWindowLeft <= -18000 && Settings.MainWindowTop <= -18000)
         {
@@ -1141,17 +1448,29 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             Settings.MainWindowTop = _cacheTop;
         }
         MainWindow.Visibility = Visibility.Visible;
+        UpdateMainWindowMaxHeightConstraint();
         UpdatePosition();
+        UpdateMainWindowMaxHeightConstraint();
 
-        Win32Helper.SetForegroundWindow(MainWindow);
+        if (activationMode == WindowActivationMode.ForceForeground)
+            Win32Helper.ForceSetForegroundWindow(MainWindow);
+        else
+            Win32Helper.SetForegroundWindow(MainWindow);
 
         MainWindow.Activate();
 
-        MainWindow.PART_Input.Focus();
-        Keyboard.Focus(MainWindow.PART_Input);
+        if (IsInputBoxVisible)
+        {
+            MainWindow.PART_Input.Focus();
+            Keyboard.Focus(MainWindow.PART_Input);
+        }
     }
 
-    public void Hide() => MainWindow.Visibility = Visibility.Collapsed;
+    public void Hide()
+    {
+        ExitInputTranslateMode();
+        MainWindow.Visibility = Visibility.Collapsed;
+    }
 
     [RelayCommand]
     private void DoubleClick()
@@ -1195,12 +1514,12 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     }
 
     [RelayCommand]
-    private void ToggleApp()
+    private void ToggleApp(WindowActivationMode? activationMode = null)
     {
         if (IsMainWindowVisible && !IsTopmost)
             Hide();
         else
-            Show();
+            Show(activationMode ?? WindowActivationMode.Normal);
     }
 
     [RelayCommand]
@@ -1209,6 +1528,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         if (!IsMouseHook)
         {
             if (IsTopmost) IsTopmost = false;
+            ExitInputTranslateMode();
             window.Visibility = Visibility.Collapsed;
         }
         CancelAllOperations();
@@ -1217,15 +1537,23 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private async Task OpenSettingsAsync(object? parameter)
     {
-        await OpenSettingsInternalAsync(parameter);
-
-        Application.Current.Windows
-                    .OfType<SettingsWindow>()
-                    .First()
-                    .Navigate(nameof(GeneralPage));
+        await OpenSettingsAndNavigateAsync(parameter);
     }
 
-    internal async Task OpenSettingsInternalAsync(object? parameter)
+    internal async Task OpenSettingsAndNavigateAsync(
+        object? parameter,
+        WindowActivationMode activationMode = WindowActivationMode.Normal)
+    {
+        var isAlreadyOpen = Application.Current.Windows.OfType<SettingsWindow>().Any();
+        var window = await OpenSettingsInternalAsync(parameter, activationMode);
+
+        if (!isAlreadyOpen)
+            window.Navigate(nameof(GeneralPage));
+    }
+
+    internal async Task<SettingsWindow> OpenSettingsInternalAsync(
+        object? parameter,
+        WindowActivationMode activationMode = WindowActivationMode.Normal)
     {
         // 如果由 ContextMenu 触发，等待关闭动画完成
         if (parameter is not null)
@@ -1235,17 +1563,19 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         if (MainWindow.IsActive && IsMainWindowVisible && !IsTopmost)
             Hide();
 
-        await SingletonWindowOpener.OpenAsync<SettingsWindow>();
+        return await SingletonWindowOpener.OpenAsync<SettingsWindow>(activationMode);
     }
 
     [RelayCommand]
     private async Task OpenHistoryAsync()
     {
-        await OpenSettingsInternalAsync(null);
-        Application.Current.Windows
-                    .OfType<SettingsWindow>()
-                    .First()
-                    .Navigate(nameof(HistoryPage));
+        await OpenHistoryInternalAsync();
+    }
+
+    internal async Task OpenHistoryInternalAsync(WindowActivationMode activationMode = WindowActivationMode.Normal)
+    {
+        var window = await OpenSettingsInternalAsync(null, activationMode);
+        window.Navigate(nameof(HistoryPage));
     }
 
     [RelayCommand]
@@ -1270,7 +1600,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     private void ToggleTopmost() => IsTopmost = !IsTopmost;
 
     [RelayCommand]
-    private void ToggleHideInput() => Settings.HideInput = !Settings.HideInput;
+    private void ToggleHideInput() => IsInputActuallyHidden = !IsInputActuallyHidden;
 
     [RelayCommand]
     private void ChangeColorScheme()
@@ -1289,20 +1619,22 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     #region Text & Clipboard Manipulation
 
     [RelayCommand]
-    private void InputClear()
+    private void InputClear(WindowActivationMode activationMode = WindowActivationMode.Normal)
     {
         CancelAllOperations();
+        ResetTranslationLanguageState();
         InputText = string.Empty;
 
         ResetAllServices();
-        Show();
+        EnterInputTranslateMode();
+        Show(activationMode);
     }
 
     [RelayCommand]
     private void Copy(string text)
     {
         if (string.IsNullOrEmpty(text)) return;
-        Utilities.SetText(text);
+        ClipboardHelper.SetText(text);
         _snackbar.ShowSuccess(_i18n.GetTranslation("CopySuccess"));
     }
 
@@ -1311,7 +1643,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     {
         if (string.IsNullOrEmpty(text)) return;
         var pascalCaseText = Utilities.ToPascalCase(text);
-        Utilities.SetText(pascalCaseText);
+        ClipboardHelper.SetText(pascalCaseText);
         _snackbar.ShowSuccess(_i18n.GetTranslation("CopySuccess"));
     }
 
@@ -1320,7 +1652,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     {
         if (string.IsNullOrEmpty(text)) return;
         var pascalCaseText = Utilities.ToCamelCase(text);
-        Utilities.SetText(pascalCaseText);
+        ClipboardHelper.SetText(pascalCaseText);
         _snackbar.ShowSuccess(_i18n.GetTranslation("CopySuccess"));
     }
 
@@ -1329,7 +1661,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     {
         if (string.IsNullOrEmpty(text)) return;
         var pascalCaseText = Utilities.ToSnakeCase(text);
-        Utilities.SetText(pascalCaseText);
+        ClipboardHelper.SetText(pascalCaseText);
         _snackbar.ShowSuccess(_i18n.GetTranslation("CopySuccess"));
     }
 
@@ -1338,8 +1670,12 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     {
         if (string.IsNullOrEmpty(text)) return;
 
+        // 如果按住Shift则使用小写
+        if (Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+            text = text.ToLower();
+
         if (IsTopmost) IsTopmost = false;
-        MainWindow.Visibility = Visibility.Collapsed;
+        Hide();
         await Task.Delay(150);
         InputHelper.PrintText(text);
     }
@@ -1365,6 +1701,87 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
 
     #region Window Position
 
+    private void OnSettingsPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(Settings.SourceLang) ||
+            e.PropertyName == nameof(Settings.TargetLang))
+        {
+            ResetTranslationLanguageState();
+        }
+
+        if (e.PropertyName == nameof(Settings.HideInput) ||
+            e.PropertyName == nameof(Settings.HideInputWithLangSelectControl))
+        {
+            NotifyInputVisibilityProperties();
+        }
+
+        if (e.PropertyName != nameof(Settings.MainWindowMaxHeightRatio) &&
+            e.PropertyName != nameof(Settings.WindowScreen) &&
+            e.PropertyName != nameof(Settings.CustomScreenNumber))
+            return;
+
+        var dispatcher = Application.Current?.Dispatcher;
+        if (dispatcher == null)
+            return;
+
+        void RefreshWindowHeightConstraint()
+        {
+            UpdateMainWindowMaxHeightConstraint();
+            if (IsMainWindowVisible)
+                AdjustPositionForContentSizeChanged();
+        }
+
+        if (dispatcher.CheckAccess())
+        {
+            RefreshWindowHeightConstraint();
+            return;
+        }
+
+        dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(RefreshWindowHeightConstraint));
+    }
+
+    /// <summary>
+    /// 根据当前屏幕工作区和用户配置比例刷新主窗口最大高度约束。
+    /// </summary>
+    /// <param name="monitor">可选。指定目标显示器，避免跟随鼠标场景下读取到旧屏幕。</param>
+    private void UpdateMainWindowMaxHeightConstraint(MonitorInfo? monitor = null)
+    {
+        if (Application.Current?.MainWindow is not MainWindow window)
+            return;
+
+        var ratio = Math.Clamp(Settings.MainWindowMaxHeightRatio, 0.6, 1.0);
+        if (Math.Abs(ratio - Settings.MainWindowMaxHeightRatio) > double.Epsilon)
+        {
+            // 统一写回归一化后的比例，确保各入口读取到一致约束。
+            Settings.MainWindowMaxHeightRatio = ratio;
+        }
+
+        var targetMonitor = monitor ?? GetWindowMonitor();
+        var workAreaTopLeft = Win32Helper.TransformPixelsToDIP(window, targetMonitor.WorkingArea.X, targetMonitor.WorkingArea.Y);
+        var workAreaBottomRight = Win32Helper.TransformPixelsToDIP(
+            window,
+            targetMonitor.WorkingArea.X + targetMonitor.WorkingArea.Width,
+            targetMonitor.WorkingArea.Y + targetMonitor.WorkingArea.Height);
+
+        var workAreaHeight = Math.Max(0, workAreaBottomRight.Y - workAreaTopLeft.Y - 8 * 2);
+        var effectiveMaxHeight = Math.Max(window.MinHeight, workAreaHeight * ratio);
+        MainWindowEffectiveMaxHeight = Math.Max(window.MinHeight, effectiveMaxHeight);
+    }
+
+    private MonitorInfo GetWindowMonitor()
+    {
+        try
+        {
+            var windowHelper = new WindowInteropHelper(MainWindow);
+            windowHelper.EnsureHandle();
+            return MonitorInfo.GetNearestDisplayMonitor(windowHelper.Handle);
+        }
+        catch
+        {
+            return SelectedScreen();
+        }
+    }
+
     public void UpdatePosition(bool hideOnStartup = false)
     {
         if (IsTopmost) return;
@@ -1387,6 +1804,13 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
                 Settings.MainWindowTop = -18000;
                 return;
             }
+
+            if (Settings.WindowScreen == WindowScreenType.FollowMouse)
+            {
+                UpdatePositionNearCursor();
+                return;
+            }
+
             if (Settings.WindowScreen == WindowScreenType.RememberLastLaunchLocation)
             {
                 var previousScreenWidth = Settings.PreviousScreenWidth;
@@ -1444,6 +1868,122 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         }
     }
 
+    private void UpdatePositionNearCursor()
+    {
+        if (!PInvoke.GetCursorPos(out var cursorPosition))
+            return;
+
+        const double horizontalOffset = 16;
+        const double verticalOffset = 20;
+        const double edgePadding = 8;
+
+        var cursorDip = Win32Helper.TransformPixelsToDIP(MainWindow, cursorPosition.X, cursorPosition.Y);
+
+        var screen = MonitorInfo.GetCursorDisplayMonitor();
+        UpdateMainWindowMaxHeightConstraint(screen);
+        var workAreaTopLeft = Win32Helper.TransformPixelsToDIP(MainWindow, screen.WorkingArea.X, screen.WorkingArea.Y);
+        var workAreaBottomRight = Win32Helper.TransformPixelsToDIP(
+            MainWindow,
+            screen.WorkingArea.X + screen.WorkingArea.Width,
+            screen.WorkingArea.Y + screen.WorkingArea.Height);
+
+        var windowWidth = MainWindow.ActualWidth > 0 ? MainWindow.ActualWidth : Settings.MainWindowWidth;
+        var windowHeight = MainWindow.ActualHeight > 0 ? MainWindow.ActualHeight : MainWindow.MinHeight;
+
+        var left = cursorDip.X + horizontalOffset;
+        var top = cursorDip.Y + verticalOffset;
+
+        if (left + windowWidth > workAreaBottomRight.X - edgePadding)
+            left = cursorDip.X - windowWidth - horizontalOffset;
+
+        if (top + windowHeight > workAreaBottomRight.Y - edgePadding)
+            top = cursorDip.Y - windowHeight - verticalOffset;
+
+        var minLeft = workAreaTopLeft.X + edgePadding;
+        var minTop = workAreaTopLeft.Y + edgePadding;
+        var maxLeft = workAreaBottomRight.X - windowWidth - edgePadding;
+        var maxTop = workAreaBottomRight.Y - windowHeight - edgePadding;
+
+        if (maxLeft < minLeft) maxLeft = minLeft;
+        if (maxTop < minTop) maxTop = minTop;
+
+        Settings.MainWindowLeft = Math.Clamp(left, minLeft, maxLeft);
+        Settings.MainWindowTop = Math.Clamp(top, minTop, maxTop);
+    }
+
+    /// <summary>
+    /// 在窗口内容尺寸变化后，确保窗口底部不会超出当前屏幕工作区。
+    /// </summary>
+    [RelayCommand]
+    private void AdjustPositionForContentSizeChanged()
+    {
+        if (_isAdjustingWindowPositionForContent || !IsMainWindowVisible || MainWindow.WindowState == WindowState.Minimized)
+            return;
+
+        var windowHeight = MainWindow.ActualHeight > 0 ? MainWindow.ActualHeight : MainWindow.MinHeight;
+        if (windowHeight <= 0)
+            return;
+
+        try
+        {
+            _isAdjustingWindowPositionForContent = true;
+            AdjustVerticalPositionWithinWorkArea();
+        }
+        finally
+        {
+            _isAdjustingWindowPositionForContent = false;
+        }
+    }
+
+    /// <summary>
+    /// 当窗口触底时，仅向上修正 Top，避免内容被屏幕底部遮挡。
+    /// </summary>
+    private void AdjustVerticalPositionWithinWorkArea()
+    {
+        const double edgePadding = 8;
+
+        MonitorInfo screen;
+        try
+        {
+            // 以主窗口句柄所在屏幕为准，避免多屏时误用鼠标屏幕。
+            var windowHelper = new WindowInteropHelper(MainWindow);
+            windowHelper.EnsureHandle();
+            screen = MonitorInfo.GetNearestDisplayMonitor(windowHelper.Handle);
+        }
+        catch
+        {
+            screen = SelectedScreen();
+        }
+
+        UpdateMainWindowMaxHeightConstraint(screen);
+
+        var workAreaTopLeft = Win32Helper.TransformPixelsToDIP(MainWindow, screen.WorkingArea.X, screen.WorkingArea.Y);
+        var workAreaBottomRight = Win32Helper.TransformPixelsToDIP(
+            MainWindow,
+            screen.WorkingArea.X + screen.WorkingArea.Width,
+            screen.WorkingArea.Y + screen.WorkingArea.Height);
+
+        var windowHeight = MainWindow.ActualHeight > 0 ? MainWindow.ActualHeight : MainWindow.MinHeight;
+        var currentTop = Settings.MainWindowTop;
+        var bottomLimit = workAreaBottomRight.Y - edgePadding;
+        var currentBottom = currentTop + windowHeight;
+
+        // 仅在触底时上移，未触底时保持原位避免抖动。
+        if (currentBottom <= bottomLimit)
+            return;
+
+        var minTop = workAreaTopLeft.Y + edgePadding;
+        var maxTop = bottomLimit - windowHeight;
+        if (maxTop < minTop)
+            maxTop = minTop;
+
+        var targetTop = Math.Clamp(currentTop, minTop, maxTop);
+        if (targetTop >= currentTop)
+            return;
+
+        Settings.MainWindowTop = targetTop;
+    }
+
     private void AdjustPositionForResolutionChange()
     {
         var screenWidth = SystemParameters.VirtualScreenWidth;
@@ -1494,6 +2034,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         switch (Settings.WindowScreen)
         {
             case WindowScreenType.Cursor:
+            case WindowScreenType.FollowMouse:
                 screen = MonitorInfo.GetCursorDisplayMonitor();
                 break;
             case WindowScreenType.Focus:
@@ -1565,10 +2106,34 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
 
     #region Helpers & Event Handlers
 
+    private void EnterInputTranslateMode()
+    {
+        if (_forceShowInputForInputTranslate)
+            return;
+
+        _forceShowInputForInputTranslate = true;
+        NotifyInputVisibilityProperties();
+    }
+
+    private void ExitInputTranslateMode()
+    {
+        if (!_forceShowInputForInputTranslate)
+            return;
+
+        _forceShowInputForInputTranslate = false;
+        NotifyInputVisibilityProperties();
+    }
+
+    private void NotifyInputVisibilityProperties()
+    {
+        OnPropertyChanged(nameof(IsInputActuallyHidden));
+        OnPropertyChanged(nameof(IsInputBoxVisible));
+        OnPropertyChanged(nameof(IsLanguageSelectControlVisible));
+    }
+
     partial void OnInputTextChanged(string value)
     {
-        if (!string.IsNullOrWhiteSpace(IdentifiedLanguage))
-            IdentifiedLanguage = string.Empty;
+        ResetTranslationLanguageState();
 
         if (!Settings.AutoTranslate)
             return;
@@ -1590,11 +2155,107 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         _debounceExecutor.Execute(Execute, TimeSpan.FromMilliseconds(Settings.AutoTranslateDelayMs));
     }
 
-    partial void OnIsMouseHookChanged(bool value) => _ = ToggleMouseHookAsync(value);
+    private void ResetTranslationLanguageState()
+    {
+        ApplyIdentifiedLanguageState(IdentifiedLanguageState.Empty);
+    }
+
+    private void ApplyIdentifiedLanguageState(IdentifiedLanguageState state)
+    {
+        _identifiedLanguageState = state;
+        SelectedIdentifiedLanguage = state.Language ?? LangEnum.Auto;
+        CanSelectIdentifiedLanguage = state.Kind != IdentifiedLanguageStateKind.None;
+        IdentifiedLanguage = BuildIdentifiedLanguageText(state);
+        OnPropertyChanged(nameof(CurrentIdentifiedLanguageState));
+    }
+
+    private string BuildIdentifiedLanguageText(IdentifiedLanguageState state)
+    {
+        return state.Kind switch
+        {
+            IdentifiedLanguageStateKind.None => string.Empty,
+            IdentifiedLanguageStateKind.Cache when state.Language.HasValue => GetLanguageDisplayText(state.Language.Value),
+            IdentifiedLanguageStateKind.Cache => _i18n.GetTranslation("IdentifiedUnknown"),
+            IdentifiedLanguageStateKind.Detected when state.Language.HasValue => GetLanguageDisplayText(state.Language.Value),
+            _ => string.Empty
+        };
+    }
+
+    private string GetLanguageDisplayText(LangEnum language)
+    {
+        var translation = _i18n.GetTranslation($"LangEnum{language}");
+        return string.IsNullOrWhiteSpace(translation) ? language.ToString() : translation;
+    }
+
+    private bool CanSelectIdentifiedLanguageForCurrentText(LangEnum language)
+    {
+        return CanSelectIdentifiedLanguage &&
+               CanTranslate &&
+               language != LangEnum.Auto;
+    }
+
+    private bool CanSelectLanguageDetectorForCurrentText(LanguageDetectorType _) => CanTranslate;
+
+    private async Task<TranslationLanguageContext> ResolveTranslationLanguageContextAsync(LangEnum? forcedSourceLanguage, CancellationToken cancellationToken)
+    {
+        if (forcedSourceLanguage is LangEnum forcedSource && forcedSource != LangEnum.Auto)
+        {
+            ApplyIdentifiedLanguageState(CreateDetectedIdentifiedLanguageState(forcedSource));
+            return CreateTranslationLanguageContext(forcedSource, LanguageDetector.GetTargetLanguage(forcedSource));
+        }
+
+        var (_, source, target) = await LanguageDetector
+            .GetLanguageAsync(InputText, cancellationToken, StartProcess, CompleteProcess, FinishProcess)
+            .ConfigureAwait(false);
+
+        return CreateTranslationLanguageContext(source, target);
+    }
+
+    private IdentifiedLanguageState CreateCacheIdentifiedLanguageState(HistoryModel history)
+    {
+        return new IdentifiedLanguageState(
+            IdentifiedLanguageStateKind.Cache,
+            ParseHistoryLanguage(history.EffectiveSourceLang) ?? ParseHistoryLanguage(history.SourceLang));
+    }
+
+    private static LangEnum? ParseHistoryLanguage(string? language)
+    {
+        if (Enum.TryParse<LangEnum>(language, true, out var parsed) && parsed != LangEnum.Auto)
+            return parsed;
+
+        return null;
+    }
+
+    private static IdentifiedLanguageState CreateDetectedIdentifiedLanguageState(LangEnum language)
+        => new(IdentifiedLanguageStateKind.Detected, language);
+
+    private TranslationLanguageContext CreateTranslationLanguageContext(LangEnum effectiveSource, LangEnum effectiveTarget)
+        => new(Settings.SourceLang, Settings.TargetLang, effectiveSource, effectiveTarget);
 
     private void UpdateCaret()
     {
         MainWindow.PART_Input.SetCaretIndex(InputText.Length);
+    }
+
+    private string HandleCapturedText(string text, TextSeparatorHandleScope scope)
+    {
+        return Utilities.CapturedTextHandler(
+            text,
+            Settings.LineBreakHandleType,
+            Settings.TextSeparatorHandleType,
+            scope,
+            Settings.TextSeparatorHandleScopes);
+    }
+
+    private string HandleSilentOcrText(string text)
+    {
+        if (Settings.TextSeparatorHandleType == TextSeparatorHandleType.None ||
+            (Settings.TextSeparatorHandleScopes & TextSeparatorHandleScope.SilentOcr) != TextSeparatorHandleScope.SilentOcr)
+        {
+            return text;
+        }
+
+        return HandleCapturedText(text, TextSeparatorHandleScope.SilentOcr);
     }
 
     private void ResetAllServices()
@@ -1623,11 +2284,12 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     {
         try
         {
-            var text = await Utilities.GetSelectedTextAsync();
+            var text = await ClipboardHelper.GetSelectedTextAsync(Settings.SelectedTextFetchTimeoutMs);
             if (string.IsNullOrEmpty(text))
             {
                 _logger.LogWarning("取词失败，可能：未选中文本、文本禁止复制、取词间隔过短、文本所属软件权限高于本软件");
-                _notification.Show("未识别到文本", "请确保选中要翻译的文本\n若问题仍然存在请尝试以管理员权限重启软件");
+                Show();
+                _snackbar.ShowWarning(_i18n.GetTranslation("NoTextRecognizedMessage"));
                 return (false, string.Empty);
             }
             return (true, text);
@@ -1639,16 +2301,31 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         }
     }
 
+    private void HandleCrosswordFetchFailed()
+    {
+        switch (Settings.CrosswordFetchFailedFallbackTarget)
+        {
+            case CrosswordFetchFailedFallbackTarget.ShowWindow:
+                Show();
+                _snackbar.ShowWarning(_i18n.GetTranslation("CrosswordTranslateFetchFailedShowWindow"), 3000);
+                break;
+            case CrosswordFetchFailedFallbackTarget.InputTranslate:
+            default:
+                InputClear();
+                _snackbar.ShowWarning(_i18n.GetTranslation("CrosswordTranslateFetchFailed"), 3000);
+                break;
+        }
+    }
+
     private void StartProcess()
     {
-        IdentifiedLanguage = string.Empty;
+        ApplyIdentifiedLanguageState(IdentifiedLanguageState.Empty);
         IsIdentifyProcessing = true;
     }
     private void FinishProcess() => IsIdentifyProcessing = false;
-    private void CompleteProcess(bool isSuccess, LangEnum source)
+    private void CompleteProcess(bool _, LangEnum source)
     {
-        var suffix = isSuccess ? string.Empty : $"「{_i18n.GetTranslation("UseSettingLang")}」";
-        IdentifiedLanguage = _i18n.GetTranslation($"LangEnum{source}") + suffix;
+        ApplyIdentifiedLanguageState(CreateDetectedIdentifiedLanguageState(source));
     }
 
     #endregion
@@ -1657,9 +2334,13 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
 
     public void Dispose()
     {
-        _debounceExecutor.Dispose();
-
         MouseKeyHelper.MouseTextSelected -= OnMouseTextSelected;
+        MouseKeyHelper.MouseTextSelected -= OnMouseTextSelectedIncretemental;
+        _clipboardMonitor?.OnClipboardTextChanged -= OnClipboardTextChanged;
+        Settings.PropertyChanged -= OnSettingsPropertyChanged;
+
+        _debounceExecutor.Dispose();
+        _clipboardMonitor?.Dispose();
 
         // 如果窗口一直没打开过，恢复位置后再退出
         if (Settings.MainWindowLeft <= -18000 && Settings.MainWindowTop <= -18000)

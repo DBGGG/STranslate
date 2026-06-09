@@ -2,6 +2,7 @@ using iNKORE.UI.WPF.Modern;
 using Serilog.Events;
 using STranslate.Plugin;
 using STranslate.ViewModels.Pages;
+using System.Windows.Input;
 
 namespace STranslate.Core;
 
@@ -26,6 +27,9 @@ public class DataProvider
         DropdownDataGeneric<LanguageDetectorType>.UpdateLabels(LanguageDetectors);
         DropdownDataGeneric<ElementTheme>.UpdateLabels(ColorSchemes);
         DropdownDataGeneric<LineBreakHandleType>.UpdateLabels(LineBreakHandleTypes);
+        DropdownDataGeneric<TextSeparatorHandleType>.UpdateLabels(TextSeparatorHandleTypes);
+        DropdownDataGeneric<TextSeparatorHandleScope>.UpdateLabels(TextSeparatorHandleScopes);
+        DropdownDataGeneric<CrosswordFetchFailedFallbackTarget>.UpdateLabels(CrosswordFetchFailedFallbackTargets);
         DropdownDataGeneric<PluginType>.UpdateLabels(PluginTypes);
         DropdownDataGeneric<LayoutAnalysisMode>.UpdateLabels(LayoutAnalysisModes);
         DropdownDataGeneric<WindowScreenType>.UpdateLabels(WindowScreenTypes);
@@ -38,6 +42,8 @@ public class DataProvider
         DropdownDataGeneric<BackupType>.UpdateLabels(BackupTypes);
         DropdownDataGeneric<ImageQuality>.UpdateLabels(ImageQualities);
         DropdownDataGeneric<DoubleClickTrayFunction>.UpdateLabels(DoubleClickTrayFunctions);
+        DropdownDataGeneric<PluginMarketCdnSourceType>.UpdateLabels(PluginMarketCdnSources);
+        DropdownDataGeneric<PluginDownloadProxyType>.UpdateLabels(PluginDownloadProxies);
     }
 
     #region LangEnums
@@ -78,6 +84,29 @@ public class DataProvider
     public class LineBreakHandleData : DropdownDataGeneric<LineBreakHandleType> { }
     public List<LineBreakHandleData> LineBreakHandleTypes { get; } =
         DropdownDataGeneric<LineBreakHandleType>.GetValues<LineBreakHandleData>("LineBreakHandleType");
+
+    #endregion
+
+    #region TextSeparatorHandleTypes
+
+    public class TextSeparatorHandleTypeData : DropdownDataGeneric<TextSeparatorHandleType> { }
+    public List<TextSeparatorHandleTypeData> TextSeparatorHandleTypes { get; } =
+        DropdownDataGeneric<TextSeparatorHandleType>.GetValues<TextSeparatorHandleTypeData>("TextSeparatorHandleType");
+
+    public class TextSeparatorHandleScopeData : DropdownDataGeneric<TextSeparatorHandleScope> { }
+    public List<TextSeparatorHandleScopeData> TextSeparatorHandleScopes { get; } =
+        DropdownDataGeneric<TextSeparatorHandleScope>
+            .GetValues<TextSeparatorHandleScopeData>("TextSeparatorHandleScope")
+            .Where(x => x.Value != TextSeparatorHandleScope.None)
+            .ToList();
+
+    #endregion
+
+    #region CrosswordFetchFailedFallbackTargets
+
+    public class CrosswordFetchFailedFallbackTargetData : DropdownDataGeneric<CrosswordFetchFailedFallbackTarget> { }
+    public List<CrosswordFetchFailedFallbackTargetData> CrosswordFetchFailedFallbackTargets { get; } =
+        DropdownDataGeneric<CrosswordFetchFailedFallbackTarget>.GetValues<CrosswordFetchFailedFallbackTargetData>("CrosswordFetchFailedFallbackTarget");
 
     #endregion
 
@@ -174,6 +203,22 @@ public class DataProvider
     public class DoubleClickTrayFunctionData : DropdownDataGeneric<DoubleClickTrayFunction> { }
     public List<DoubleClickTrayFunctionData> DoubleClickTrayFunctions { get; } =
         DropdownDataGeneric<DoubleClickTrayFunction>.GetValues<DoubleClickTrayFunctionData>("DoubleClickTrayFunction");
+
+    #endregion
+
+    #region PluginMarketCdnSources
+
+    public class PluginMarketCdnSourceTypeData : DropdownDataGeneric<PluginMarketCdnSourceType> { }
+    public List<PluginMarketCdnSourceTypeData> PluginMarketCdnSources { get; } =
+        DropdownDataGeneric<PluginMarketCdnSourceType>.GetValues<PluginMarketCdnSourceTypeData>("PluginMarketCdnSourceType");
+
+    #endregion
+
+    #region PluginDownloadProxies
+
+    public class PluginDownloadProxyTypeData : DropdownDataGeneric<PluginDownloadProxyType> { }
+    public List<PluginDownloadProxyTypeData> PluginDownloadProxies { get; } =
+        DropdownDataGeneric<PluginDownloadProxyType>.GetValues<PluginDownloadProxyTypeData>("PluginDownloadProxyType");
 
     #endregion
 }

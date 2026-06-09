@@ -5,6 +5,8 @@ using STranslate.Plugin;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using System.Web;
@@ -25,6 +27,7 @@ public class HttpService : IHttpService
         _jsonOptions = new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            PropertyNameCaseInsensitive = true,
             WriteIndented = false,
             Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
         };
@@ -184,7 +187,13 @@ public class HttpService : IHttpService
             var finalUrl = BuildUrlWithQuery(url, options?.QueryParams);
             using var request = new HttpRequestMessage(HttpMethod.Post, finalUrl);
             if (content != null)
-                request.Content = new StringContent(content, Encoding.UTF8, options?.ContentType ?? "application/json");
+            {
+                request.Content = new StringContent(content, Encoding.UTF8);
+
+                // 创建不带 charset 的 Content-Type
+                var contentType = options?.ContentType ?? "application/json";
+                request.Content.Headers.ContentType = MediaTypeHeaderValue.Parse(contentType);
+            }
 
             AddHeaders(request, options?.Headers);
 
@@ -318,11 +327,50 @@ public class HttpService : IHttpService
         catch (OperationCanceledException)
         {
             _logger?.LogInformation("Stream POST request was canceled for URL: {Url}, Service: {ServiceName}", url, serviceName);
+            throw;
         }
         catch (Exception ex)
         {
             _logger?.LogError(ex, "Stream POST request failed for URL: {Url}, Service: {ServiceName}", url, serviceName);
             throw;
+        }
+    }
+
+    public async IAsyncEnumerable<string> StreamPostAsyncEnumerable(string url, object content, Options? options = null, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        await foreach (var line in StreamPostAsyncEnumerable(Constant.HttpClientName, url, content, options, cancellationToken))
+        {
+            yield return line;
+        }
+    }
+
+    public async IAsyncEnumerable<string> StreamPostAsyncEnumerable(string serviceName, string url, object content, Options? options = null, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        using var client = _httpClientFactory.CreateClient(serviceName);
+        ConfigureClientTimeout(client, options?.Timeout);
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, url);
+        var jsonContent = content is string str ? str : JsonSerializer.Serialize(content, _jsonOptions);
+        request.Content = new StringContent(jsonContent, Encoding.UTF8, options?.ContentType ?? "application/json");
+
+        AddHeaders(request, options?.Headers);
+
+        _logger?.LogTrace("Sending streaming POST async-enumerable request to {Url} using service {ServiceName}", url, serviceName);
+
+        using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+        await EnsureSuccessStatusCodeAsync(response, cancellationToken);
+
+        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        using var reader = new StreamReader(stream);
+
+        // 保持与回调模式一致：逐行读取并忽略空行，避免把心跳空包暴露给调用方。
+        string? line;
+        while (!cancellationToken.IsCancellationRequested && (line = await reader.ReadLineAsync(cancellationToken)) != null)
+        {
+            if (!string.IsNullOrEmpty(line))
+            {
+                yield return line;
+            }
         }
     }
 

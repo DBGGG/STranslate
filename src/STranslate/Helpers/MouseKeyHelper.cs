@@ -1,5 +1,4 @@
 using Gma.System.MouseKeyHook;
-using STranslate.Core;
 
 namespace STranslate.Helpers;
 
@@ -8,6 +7,7 @@ public class MouseKeyHelper
     private static IKeyboardMouseEvents? _mouseHook;
     private static bool _isMouseListening;
     private static string _oldText = string.Empty;
+    private static Func<int> _getSelectedTextFetchTimeoutMs = () => 500;
 
     /// <summary>
     /// 鼠标划词文本选择事件
@@ -17,8 +17,14 @@ public class MouseKeyHelper
     /// <summary>
     /// 启动鼠标划词监听
     /// </summary>
-    public static async Task StartMouseTextSelectionAsync()
+    /// <param name="getSelectedTextFetchTimeoutMs">获取当前取词等待上限的方法，单位：毫秒。</param>
+    public static async Task StartMouseTextSelectionAsync(Func<int>? getSelectedTextFetchTimeoutMs = null)
     {
+        if (getSelectedTextFetchTimeoutMs != null)
+        {
+            _getSelectedTextFetchTimeoutMs = getSelectedTextFetchTimeoutMs;
+        }
+
         if (_isMouseListening) return;
 
         _mouseHook = Hook.GlobalEvents();
@@ -47,6 +53,8 @@ public class MouseKeyHelper
             _mouseHook.Dispose();
             _mouseHook = null;
         }
+
+        _getSelectedTextFetchTimeoutMs = () => 500;
     }
 
     /// <summary>
@@ -70,7 +78,7 @@ public class MouseKeyHelper
     public static bool IsMouseTextSelectionListening => _isMouseListening;
 
     private static void OnDragStarted(object? sender, System.Windows.Forms.MouseEventArgs e)
-        => _oldText = Utilities.GetText() ?? string.Empty;
+        => _oldText = ClipboardHelper.GetText() ?? string.Empty;
 
     private static void OnDragFinished(object? sender, System.Windows.Forms.MouseEventArgs e)
     {
@@ -80,7 +88,7 @@ public class MouseKeyHelper
             _ = Task.Run(async () =>
             {
                 // 异步获取选中文本
-                var selectedText = await Utilities.GetSelectedTextAsync();
+                var selectedText = await ClipboardHelper.GetSelectedTextAsync(Math.Max(1, _getSelectedTextFetchTimeoutMs()));
                 if (!string.IsNullOrEmpty(selectedText) && selectedText != _oldText)
                 {
                     MouseTextSelected?.Invoke(selectedText);

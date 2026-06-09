@@ -5,6 +5,7 @@
     xmlns:cnvt="clr-namespace:STranslate.Converters"
     xmlns:control="clr-namespace:STranslate.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
     xmlns:ikw="http://schemas.inkore.net/lib/ui/wpf"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:s="https://github.com/zggsong/2022/xaml"
@@ -16,7 +17,7 @@
     Width="{Binding Settings.MainWindowWidth, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
     MinWidth="400"
     MinHeight="200"
-    MaxHeight="{Binding Settings.MainWindowMaxHeight, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+    MaxHeight="{Binding MainWindowEffectiveMaxHeight, Mode=OneWay}"
     control:SizeToContentBehavior.PersistentSizeToContent="Height"
     control:SnackbarBehavior.EnableSnackbar="True"
     d:DataContext="{d:DesignInstance Type=vm:MainWindowViewModel}"
@@ -38,6 +39,11 @@
     Visibility="Visible"
     WindowStartupLocation="Manual"
     mc:Ignorable="d">
+    <i:Interaction.Triggers>
+        <i:EventTrigger EventName="SizeChanged">
+            <i:InvokeCommandAction Command="{Binding AdjustPositionForContentSizeChangedCommand}" />
+        </i:EventTrigger>
+    </i:Interaction.Triggers>
     <Window.InputBindings>
         <KeyBinding
             Key="Esc"
@@ -92,24 +98,31 @@
         <control:HeaderControl
             Padding="6,4,6,0"
             VerticalAlignment="Top"
+            CloseCommand="{Binding CancelCommand}"
+            CloseCommandParameter="{Binding ElementName=STWindow}"
             ColorSchemeCommand="{Binding ChangeColorSchemeCommand}"
             HistoryNextCommand="{Binding HistoryNextCommand}"
             HistoryPreviousCommand="{Binding HistoryPreviousCommand}"
+            ImageTranslateCommand="{Binding ImageTranslateCommand}"
             IsAutoTranslate="{Binding Settings.AutoTranslate}"
             IsAutoTranslateVisible="{Binding Settings.IsAutoTranslateVisible}"
+            IsCloseVisible="{Binding Settings.IsCloseButtonVisible}"
+            IsClipboardMonitorVisible="{Binding Settings.IsClipboardMonitorVisible}"
+            IsClipboardMonitoring="{Binding IsClipboardMonitoring}"
             IsColorSchemeVisible="{Binding Settings.IsColorSchemeVisible}"
-            IsHideInput="{Binding Settings.HideInput}"
+            IsHideInput="{Binding IsInputActuallyHidden, Mode=TwoWay}"
             IsHideInputVisible="{Binding Settings.IsHideInputVisible}"
             IsHistoryNavigationVisible="{Binding Settings.IsHistoryNavigationVisible}"
+            IsImageTranslateVisible="{Binding Settings.IsImageTranslateVisible}"
             IsMouseHook="{Binding IsMouseHook}"
             IsMouseHookVisible="{Binding Settings.IsMouseHookVisible}"
             IsOcrVisible="{Binding Settings.IsOcrVisible}"
-            IsScreenshotTranslateInImageVisible="{Binding Settings.IsScreenshotTranslateInImageVisible}"
+            IsScreenshotTranslateVisible="{Binding Settings.IsScreenshotTranslateVisible}"
             IsTopmost="{Binding IsTopmost}"
             OcrCommand="{Binding OcrCommand}"
             ScreenshotTranslateCommand="{Binding ScreenshotTranslateCommand}"
-            ScreenshotTranslateInImage="{Binding Settings.ScreenshotTranslateInImage}"
-            SettingCommand="{Binding OpenSettingsCommand}" />
+            SettingCommand="{Binding OpenSettingsCommand}"
+            VisibleActions="{Binding Settings.MainHeaderVisibleActions}" />
 
         <ui:ScrollViewerEx Margin="10,37,0,5">
             <StackPanel>
@@ -122,33 +135,29 @@
                     ExecuteCommand="{Binding TranslateCommand}"
                     ForceExecuteCommand="{Binding TranslateCommand}"
                     HasActivedVocabulary="{Binding VocabularyService.HasActivedVocabulary}"
+                    CanSelectIdentifiedLanguage="{Binding CanSelectIdentifiedLanguage}"
                     IdentifiedLanguage="{Binding IdentifiedLanguage}"
+                    IdentifiedLanguageItemsSource="{Binding IdentifiedLanguageOptions}"
+                    IdentifiedLanguageState="{Binding CurrentIdentifiedLanguageState}"
                     IsIdentify="{Binding IsIdentifyProcessing}"
+                    LanguageDetectorItemsSource="{Binding DataProvider.LanguageDetectors}"
+                    PlayAudioCancelCommand="{Binding PlayAudioCancelCommand}"
                     PlayAudioCommand="{Binding PlayAudioCommand}"
                     RemoveLineBreaksCommand="{Binding RemoveLineBreaksCommand}"
                     RemoveSpacesCommand="{Binding RemoveSpacesCommand}"
                     SaveToVocabularyCommand="{Binding SaveToVocabularyCommand}"
+                    SelectIdentifiedLanguageCommand="{Binding SelectIdentifiedLanguageCommand}"
+                    SelectLanguageDetectorCommand="{Binding SelectLanguageDetectorCommand}"
+                    SelectedIdentifiedLanguage="{Binding SelectedIdentifiedLanguage}"
+                    SelectedLanguageDetector="{Binding Settings.LanguageDetector, Mode=TwoWay}"
                     Text="{Binding InputText, UpdateSourceTrigger=PropertyChanged}"
                     TranslateOnPaste="{Binding Settings.TranslateOnPaste}"
-                    Visibility="{Binding Settings.HideInput, Converter={cnvt:BoolToVisibilityInverseConverter}}" />
+                    Visibility="{Binding IsInputBoxVisible, Converter={cnvt:BoolToVisibilityConverter}}" />
 
                 <!--  // LangSelectControl //  -->
-                <Grid Margin="0,0,10,10">
-                    <Grid.Style>
-                        <Style TargetType="Grid">
-                            <Style.Triggers>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding Settings.HideInput}" Value="True" />
-                                        <Condition Binding="{Binding Settings.HideInputWithLangSelectControl}" Value="True" />
-                                    </MultiDataTrigger.Conditions>
-                                    <MultiDataTrigger.Setters>
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                    </MultiDataTrigger.Setters>
-                                </MultiDataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Grid.Style>
+                <Grid
+                    Margin="0,0,10,10"
+                    Visibility="{Binding IsLanguageSelectControlVisible, Converter={cnvt:BoolToVisibilityConverter}}">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
@@ -166,6 +175,7 @@
 
                     <Button
                         Grid.Column="1"
+                        Margin="2,0"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Stretch"
                         Command="{Binding SwapLanguageCommand}"
@@ -184,6 +194,7 @@
 
                     <ListBox
                         Grid.Column="3"
+                        Margin="2,0,0,0"
                         Background="Transparent"
                         ItemsSource="{Binding TranslateService.Services}">
                         <ListBox.Resources>
@@ -258,6 +269,7 @@
                     InsertCommand="{Binding InsertCommand}"
                     ItemsSource="{Binding TranslateService.Services}"
                     NavigateCommand="{Binding NavigateCommand}"
+                    PlayAudioCancelCommand="{Binding PlayAudioCancelCommand}"
                     PlayAudioCommand="{Binding PlayAudioCommand}"
                     PlayAudioUrlCommand="{Binding PlayAudioUrlCommand}"
                     RetryCommand="{Binding SingleTranslateCommand}"
@@ -310,6 +322,14 @@
                         Visibility="{Binding Source={StaticResource ViewModel}, Path=Data.Settings.ShowScreenshotItemInNotifyIconMenu, Converter={cnvt:BoolToVisibilityConverter}}">
                         <MenuItem.Icon>
                             <ui:FontIcon Icon="{x:Static ui:FluentSystemIcons.ScreenCut_20_Regular}" />
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem
+                        Command="{Binding Source={StaticResource ViewModel}, Path=Data.ImageTranslateCommand}"
+                        Header="{DynamicResource ImageTranslate}"
+                        Visibility="{Binding Source={StaticResource ViewModel}, Path=Data.Settings.ShowImageTranslateItemInNotifyIconMenu, Converter={cnvt:BoolToVisibilityConverter}}">
+                        <MenuItem.Icon>
+                            <ui:FontIcon Icon="{x:Static ui:FluentSystemIcons.DrawImage_20_Regular}" />
                         </MenuItem.Icon>
                     </MenuItem>
                     <MenuItem

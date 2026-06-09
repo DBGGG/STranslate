@@ -70,6 +70,35 @@
                     Style="{DynamicResource BodyStrongTextBlockStyle}"
                     Text="{DynamicResource GlobalHotkeys}" />
 
+                <ui:SettingsCard Description="{DynamicResource Hotkey_IncrementalTranslateDescription}" Header="{DynamicResource Hotkey_IncrementalTranslate}">
+                    <ui:SettingsCard.HeaderIcon>
+                        <ui:FontIcon Icon="{x:Static ui:FluentSystemIcons.TextIndentIncrease_20_Regular}" />
+                    </ui:SettingsCard.HeaderIcon>
+
+                    <Button Command="{Binding IncrementalTranslateKeyCommand}" Content="{Binding HotkeySettings.IncrementalTranslateKey, Converter={cnvt:StringConverter}}">
+                        <Button.ContentTemplate>
+                            <DataTemplate>
+                                <Border
+                                    x:Name="PART_InnerBorder"
+                                    Padding="10,5"
+                                    Background="{DynamicResource {x:Static ui:ThemeKeys.SystemControlBackgroundAccentBrushKey}}"
+                                    BorderThickness="1"
+                                    CornerRadius="5">
+                                    <TextBlock Foreground="{DynamicResource {x:Static ui:ThemeKeys.TextFillColorInverseBrushKey}}" Text="{Binding}" />
+                                </Border>
+                                <DataTemplate.Triggers>
+                                    <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType={x:Type Button}}, Path=IsMouseOver}" Value="True">
+                                        <Setter TargetName="PART_InnerBorder" Property="Background" Value="{DynamicResource SystemAccentColorLight1Brush}" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType={x:Type Button}}, Path=IsPressed}" Value="True">
+                                        <Setter TargetName="PART_InnerBorder" Property="Background" Value="{DynamicResource SystemAccentColorDark1Brush}" />
+                                    </DataTrigger>
+                                </DataTemplate.Triggers>
+                            </DataTemplate>
+                        </Button.ContentTemplate>
+                    </Button>
+                </ui:SettingsCard>
+
                 <control:CardGroup>
                     <ui:SettingsCard Description="{DynamicResource Hotkey_OpenSTranslateDescription}" Header="{DynamicResource Hotkey_OpenSTranslate}">
                         <ui:SettingsCard.HeaderIcon>
@@ -95,13 +124,24 @@
 
                     <ui:SettingsCard Description="{DynamicResource Hotkey_CrosswordTranslateDescription}" Header="{DynamicResource Hotkey_CrosswordTranslate}">
                         <ui:SettingsCard.HeaderIcon>
-                            <ui:FontIcon Icon="{x:Static ui:FluentSystemIcons.Keyboard_24_Regular}" />
+                            <ui:FontIcon Icon="{x:Static ui:FluentSystemIcons.CursorClick_20_Regular}" />
                         </ui:SettingsCard.HeaderIcon>
                         <control:HotkeyControl
                             DefaultHotkey="{Binding HotkeySettings.CrosswordTranslateHotkey.Default}"
                             Hotkey="{Binding HotkeySettings.CrosswordTranslateHotkey.Key}"
                             IsRegistered="{Binding HotkeySettings.CrosswordTranslateHotkey.IsConflict}"
                             WindowTitle="{DynamicResource Hotkey_CrosswordTranslate}" />
+                    </ui:SettingsCard>
+
+                    <ui:SettingsCard Description="{DynamicResource Hotkey_CrosswordTranslateByCtrlSameCDescription}" Header="Ctrl+C+C">
+                        <ui:SettingsCard.HeaderIcon>
+                            <ui:FontIcon Icon="{x:Static ui:FluentSystemIcons.CopySelect_20_Regular}" />
+                        </ui:SettingsCard.HeaderIcon>
+                        <ui:ToggleSwitch
+                            Margin="0,0,8,0"
+                            IsOn="{Binding HotkeySettings.CrosswordTranslateByCtrlSameC}"
+                            OffContent="{DynamicResource Off}"
+                            OnContent="{DynamicResource On}" />
                     </ui:SettingsCard>
 
                     <ui:SettingsCard Description="{DynamicResource Hotkey_ReplaceTranslateDescription}" Header="{DynamicResource Hotkey_ReplaceTranslate}">
@@ -124,6 +164,17 @@
                             Hotkey="{Binding HotkeySettings.ScreenshotTranslateHotkey.Key}"
                             IsRegistered="{Binding HotkeySettings.ScreenshotTranslateHotkey.IsConflict}"
                             WindowTitle="{DynamicResource Hotkey_ScreenshotTranslate}" />
+                    </ui:SettingsCard>
+
+                    <ui:SettingsCard Description="{DynamicResource Hotkey_ImageTranslateDescription}" Header="{DynamicResource Hotkey_ImageTranslate}">
+                        <ui:SettingsCard.HeaderIcon>
+                            <ui:FontIcon Icon="{x:Static ui:FluentSystemIcons.DrawImage_20_Regular}" />
+                        </ui:SettingsCard.HeaderIcon>
+                        <control:HotkeyControl
+                            DefaultHotkey="{Binding HotkeySettings.ImageTranslateHotkey.Default}"
+                            Hotkey="{Binding HotkeySettings.ImageTranslateHotkey.Key}"
+                            IsRegistered="{Binding HotkeySettings.ImageTranslateHotkey.IsConflict}"
+                            WindowTitle="{DynamicResource Hotkey_ImageTranslate}" />
                     </ui:SettingsCard>
 
                     <ui:SettingsCard Description="{DynamicResource Hotkey_MouseHookTranslateDescription}" Header="{DynamicResource Hotkey_MouseHookTranslate}">
@@ -168,6 +219,17 @@
                             Hotkey="{Binding HotkeySettings.OcrHotkey.Key}"
                             IsRegistered="{Binding HotkeySettings.OcrHotkey.IsConflict}"
                             WindowTitle="{DynamicResource Hotkey_Ocr}" />
+                    </ui:SettingsCard>
+
+                    <ui:SettingsCard Description="{DynamicResource Hotkey_ClipboardMonitorDescription}" Header="{DynamicResource Hotkey_ClipboardMonitor}">
+                        <ui:SettingsCard.HeaderIcon>
+                            <ui:FontIcon Icon="{x:Static ui:FluentSystemIcons.ClipboardMore_20_Regular}" />
+                        </ui:SettingsCard.HeaderIcon>
+                        <control:HotkeyControl
+                            DefaultHotkey="{Binding HotkeySettings.ClipboardMonitorHotkey.Default}"
+                            Hotkey="{Binding HotkeySettings.ClipboardMonitorHotkey.Key}"
+                            IsRegistered="{Binding HotkeySettings.ClipboardMonitorHotkey.IsConflict}"
+                            WindowTitle="{DynamicResource Hotkey_ClipboardMonitor}" />
                     </ui:SettingsCard>
                 </control:CardGroup>
 

@@ -18,6 +18,9 @@
     d:DesignHeight="850"
     d:DesignWidth="800"
     mc:Ignorable="d">
+    <ui:Page.InputBindings>
+        <KeyBinding Key="Delete" Command="{Binding DeleteSelectedHistoryCommand}" />
+    </ui:Page.InputBindings>
     <ui:Page.Resources>
         <s:BindingProxy x:Key="VmProxy" Data="{Binding RelativeSource={RelativeSource AncestorType=ui:Page}, Path=DataContext}" />
     </ui:Page.Resources>
@@ -26,15 +29,66 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <DockPanel Margin="0,0,0,12">
+        <DockPanel Margin="0,0,0,12" LastChildFill="False">
+            <!--  标题  -->
             <TextBlock
+                VerticalAlignment="Center"
                 DockPanel.Dock="Left"
                 Style="{DynamicResource {x:Static ui:ThemeKeys.SubtitleTextBlockStyleKey}}"
                 Text="{DynamicResource History}" />
-            <control:IconButton
-                Margin="10,0,0,0"
-                Command="{Binding RefreshCommand}"
-                Icon="{x:Static ui:FluentSystemIcons.ArrowSync_20_Regular}" />
+
+            <!--  命令区域  -->
+            <Border
+                Margin="12,0,0,0"
+                Padding="4"
+                Background="{DynamicResource {x:Static ui:ThemeKeys.ControlFillColorSecondaryBrushKey}}"
+                CornerRadius="4"
+                DockPanel.Dock="Left">
+                <ikw:SimpleStackPanel Orientation="Horizontal" Spacing="4">
+                    <control:IconButton
+                        Command="{Binding RefreshCommand}"
+                        Icon="{x:Static ui:FluentSystemIcons.ArrowSync_20_Regular}"
+                        ToolTip="{DynamicResource Refresh}" />
+                    <!--  分隔线  -->
+                    <Rectangle
+                        Width="1"
+                        Height="20"
+                        Margin="4,0"
+                        VerticalAlignment="Center"
+                        Fill="{DynamicResource {x:Static ui:ThemeKeys.ControlStrokeColorDefaultBrushKey}}" />
+                    <control:IconButton
+                        Command="{Binding DeleteSelectedHistoryCommand}"
+                        Icon="{x:Static ui:FluentSystemIcons.Delete_20_Regular}"
+                        IsEnabled="{Binding CanExportHistory}"
+                        ToolTip="{DynamicResource BatchDeleteHistory}" />
+                    <control:IconButton
+                        Command="{Binding ExportHistoryCommand}"
+                        Icon="{x:Static ui:FluentSystemIcons.ArrowExport_20_Regular}"
+                        IsEnabled="{Binding CanExportHistory}"
+                        ToolTip="{DynamicResource ExportHistory}" />
+                    <Button
+                        Margin="4,0"
+                        Padding="5,3"
+                        ui:ControlHelper.CornerRadius="6"
+                        ToolTip="{DynamicResource AllHistoryActions}">
+                        <ui:FontIcon Icon="{x:Static ui:FluentSystemIcons.MoreHorizontal_20_Regular}" />
+                        <ui:FlyoutService.Flyout>
+                            <ui:MenuFlyout Placement="BottomEdgeAlignedRight">
+                                <MenuItem Command="{Binding DeleteAllHistoryCommand}" Header="{DynamicResource DeleteAllHistory}">
+                                    <MenuItem.Icon>
+                                        <ui:FontIcon Icon="{x:Static ui:FluentSystemIcons.Delete_20_Regular}" />
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                                <MenuItem Command="{Binding ExportAllHistoryCommand}" Header="{DynamicResource ExportAllHistory}">
+                                    <MenuItem.Icon>
+                                        <ui:FontIcon Icon="{x:Static ui:FluentSystemIcons.ArrowExport_20_Regular}" />
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                            </ui:MenuFlyout>
+                        </ui:FlyoutService.Flyout>
+                    </Button>
+                </ikw:SimpleStackPanel>
+            </Border>
         </DockPanel>
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
@@ -59,9 +113,11 @@
                 <ListBox
                     Grid.Row="1"
                     control:ListBoxScrollBehavior.ScrollAtBottomCommand="{Binding LoadMoreCommand}"
+                    control:ListBoxSelectedItemsBehavior.SelectedItems="{Binding SelectedItems}"
                     Background="Transparent"
                     ItemsSource="{Binding HistoryItems}"
-                    SelectedItem="{Binding SelectedItem}">
+                    SelectedItem="{Binding SelectedListItem}"
+                    SelectionMode="Extended">
                     <ListBox.ItemContainerStyle>
                         <Style BasedOn="{StaticResource {x:Type ListBoxItem}}" TargetType="ListBoxItem">
                             <Setter Property="Height" Value="40" />
@@ -73,13 +129,11 @@
 
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <Grid>
-                                <TextBlock
-                                    VerticalAlignment="Center"
-                                    Text="{Binding SourceText}"
-                                    TextTrimming="CharacterEllipsis"
-                                    TextWrapping="NoWrap" />
-                            </Grid>
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                Text="{Binding SourceText}"
+                                TextTrimming="CharacterEllipsis"
+                                TextWrapping="NoWrap" />
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>

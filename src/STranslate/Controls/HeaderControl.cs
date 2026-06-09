@@ -1,11 +1,14 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Collections.Generic;
 
 namespace STranslate.Controls;
 
 public class HeaderControl : Control
 {
+    private Border? _dragBorder;
+
     static HeaderControl()
     {
         DefaultStyleKeyProperty.OverrideMetadata(typeof(HeaderControl),
@@ -26,6 +29,40 @@ public class HeaderControl : Control
             new FrameworkPropertyMetadata(
                 false,
                 FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
+
+    #region ClipboardMonitor
+
+    public bool IsClipboardMonitoring
+    {
+        get => (bool)GetValue(IsClipboardMonitoringProperty);
+        set => SetValue(IsClipboardMonitoringProperty, value);
+    }
+
+    public static readonly DependencyProperty IsClipboardMonitoringProperty =
+        DependencyProperty.Register(
+            nameof(IsClipboardMonitoring),
+            typeof(bool),
+            typeof(HeaderControl),
+            new FrameworkPropertyMetadata(
+                false,
+                FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
+
+    public bool IsClipboardMonitorVisible
+    {
+        get => (bool)GetValue(IsClipboardMonitorVisibleProperty);
+        set => SetValue(IsClipboardMonitorVisibleProperty, value);
+    }
+
+    public static readonly DependencyProperty IsClipboardMonitorVisibleProperty =
+        DependencyProperty.Register(
+            nameof(IsClipboardMonitorVisible),
+            typeof(bool),
+            typeof(HeaderControl),
+            new FrameworkPropertyMetadata(
+                true,
+                FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
+
+    #endregion
 
     #region Setting
 
@@ -55,6 +92,58 @@ public class HeaderControl : Control
             nameof(SettingCommand),
             typeof(ICommand),
             typeof(HeaderControl));
+
+    #endregion
+
+    #region Close
+
+    /// <summary>
+    /// 获取或设置固定关闭按钮触发的命令。
+    /// </summary>
+    public ICommand? CloseCommand
+    {
+        get => (ICommand?)GetValue(CloseCommandProperty);
+        set => SetValue(CloseCommandProperty, value);
+    }
+
+    public static readonly DependencyProperty CloseCommandProperty =
+        DependencyProperty.Register(
+            nameof(CloseCommand),
+            typeof(ICommand),
+            typeof(HeaderControl));
+
+    /// <summary>
+    /// 获取或设置固定关闭按钮传递给命令的参数。
+    /// </summary>
+    public object? CloseCommandParameter
+    {
+        get => GetValue(CloseCommandParameterProperty);
+        set => SetValue(CloseCommandParameterProperty, value);
+    }
+
+    public static readonly DependencyProperty CloseCommandParameterProperty =
+        DependencyProperty.Register(
+            nameof(CloseCommandParameter),
+            typeof(object),
+            typeof(HeaderControl));
+
+    /// <summary>
+    /// 获取或设置固定关闭按钮是否显示。
+    /// </summary>
+    public bool IsCloseVisible
+    {
+        get => (bool)GetValue(IsCloseVisibleProperty);
+        set => SetValue(IsCloseVisibleProperty, value);
+    }
+
+    public static readonly DependencyProperty IsCloseVisibleProperty =
+        DependencyProperty.Register(
+            nameof(IsCloseVisible),
+            typeof(bool),
+            typeof(HeaderControl),
+            new FrameworkPropertyMetadata(
+                true,
+                FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
 
     #endregion
 
@@ -92,32 +181,17 @@ public class HeaderControl : Control
 
     #endregion
 
-    #region ScreenshotTranslateInImage
+    #region ScreenshotTranslate
 
-    public bool ScreenshotTranslateInImage
+    public bool IsScreenshotTranslateVisible
     {
-        get => (bool)GetValue(ScreenshotTranslateInImageProperty);
-        set => SetValue(ScreenshotTranslateInImageProperty, value);
+        get => (bool)GetValue(IsScreenshotTranslateVisibleProperty);
+        set => SetValue(IsScreenshotTranslateVisibleProperty, value);
     }
 
-    public static readonly DependencyProperty ScreenshotTranslateInImageProperty =
+    public static readonly DependencyProperty IsScreenshotTranslateVisibleProperty =
         DependencyProperty.Register(
-            nameof(ScreenshotTranslateInImage),
-            typeof(bool),
-            typeof(HeaderControl),
-            new FrameworkPropertyMetadata(
-                false,
-                FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
-
-    public bool IsScreenshotTranslateInImageVisible
-    {
-        get => (bool)GetValue(IsScreenshotTranslateInImageVisibleProperty);
-        set => SetValue(IsScreenshotTranslateInImageVisibleProperty, value);
-    }
-
-    public static readonly DependencyProperty IsScreenshotTranslateInImageVisibleProperty =
-        DependencyProperty.Register(
-            nameof(IsScreenshotTranslateInImageVisible),
+            nameof(IsScreenshotTranslateVisible),
             typeof(bool),
             typeof(HeaderControl),
             new FrameworkPropertyMetadata(
@@ -133,6 +207,37 @@ public class HeaderControl : Control
     public static readonly DependencyProperty ScreenshotTranslateCommandProperty =
         DependencyProperty.Register(
             nameof(ScreenshotTranslateCommand),
+            typeof(ICommand),
+            typeof(HeaderControl));
+
+    #endregion
+
+    #region ImageTranslate
+
+    public bool IsImageTranslateVisible
+    {
+        get => (bool)GetValue(IsImageTranslateVisibleProperty);
+        set => SetValue(IsImageTranslateVisibleProperty, value);
+    }
+
+    public static readonly DependencyProperty IsImageTranslateVisibleProperty =
+        DependencyProperty.Register(
+            nameof(IsImageTranslateVisible),
+            typeof(bool),
+            typeof(HeaderControl),
+            new FrameworkPropertyMetadata(
+                true,
+                FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
+
+    public ICommand? ImageTranslateCommand
+    {
+        get => (ICommand?)GetValue(ImageTranslateCommandProperty);
+        set => SetValue(ImageTranslateCommandProperty, value);
+    }
+
+    public static readonly DependencyProperty ImageTranslateCommandProperty =
+        DependencyProperty.Register(
+            nameof(ImageTranslateCommand),
             typeof(ICommand),
             typeof(HeaderControl));
 
@@ -311,16 +416,40 @@ public class HeaderControl : Control
 
     #endregion
 
+    public IEnumerable<string>? VisibleActions
+    {
+        get => (IEnumerable<string>?)GetValue(VisibleActionsProperty);
+        set => SetValue(VisibleActionsProperty, value);
+    }
+
+    public static readonly DependencyProperty VisibleActionsProperty =
+        DependencyProperty.Register(
+            nameof(VisibleActions),
+            typeof(IEnumerable<string>),
+            typeof(HeaderControl),
+            new FrameworkPropertyMetadata(
+                null,
+                FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
+
     public override void OnApplyTemplate()
     {
+        if (_dragBorder != null)
+        {
+            _dragBorder.MouseLeftButtonDown -= OnDragBorderMouseLeftButtonDown;
+            _dragBorder = null;
+        }
+
         base.OnApplyTemplate();
 
         if (GetTemplateChild("PART_Border") is Border border)
         {
-            border.MouseLeftButtonDown += (s, e) =>
-            {
-                Window.GetWindow(this)?.DragMove();
-            };
+            _dragBorder = border;
+            _dragBorder.MouseLeftButtonDown += OnDragBorderMouseLeftButtonDown;
         }
+    }
+
+    private void OnDragBorderMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        Window.GetWindow(this)?.DragMove();
     }
 }

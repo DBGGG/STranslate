@@ -26,14 +26,16 @@ public partial class HotkeyControlDialog : ContentDialog
 
     private string DefaultHotkey { get; }
     public string WindowTitle { get; }
+    public bool SingleKeyMode { get; }
     public ObservableCollection<string> KeysToDisplay { get; } = [];
     public HkReturnType ReturnType { get; private set; } = HkReturnType.Cancel;
     public string ResultValue { get; private set; } = string.Empty;
     public string EmptyHotkey => _i18n.GetTranslation("None");
 
-    public HotkeyControlDialog(HotkeyType type, string hotkey, string defaultHotkey, string windowTitle = "")
+    public HotkeyControlDialog(HotkeyType type, string hotkey, string defaultHotkey, string windowTitle = "", bool singleKeyMode = false)
     {
         _type = type;
+        SingleKeyMode = singleKeyMode;
         _i18n = Ioc.Default.GetRequiredService<Internationalization>();
         _hotkeySettings = Ioc.Default.GetRequiredService<HotkeySettings>();
         WindowTitle = windowTitle switch
@@ -103,6 +105,25 @@ public partial class HotkeyControlDialog : ContentDialog
         if (ChefKeysManager.StartMenuBlocked && key.ToString() == ChefKeysManager.StartMenuSimulatedKey)
             return;
 
+        // 单键模式处理
+        if (SingleKeyMode)
+        {
+            // 忽略修饰键本身
+            if (key == Key.LeftCtrl || key == Key.RightCtrl ||
+                key == Key.LeftAlt || key == Key.RightAlt ||
+                key == Key.LeftShift || key == Key.RightShift ||
+                key == Key.LWin || key == Key.RWin)
+            {
+                return;
+            }
+
+            // 创建不带修饰键的单键模型
+            var singleHotkeyModel = new HotkeyModel(false, false, false, false, key);
+            SetKeysToDisplay(singleHotkeyModel);
+            return;
+        }
+
+        // 原有的组合键处理逻辑
         SpecialKeyState specialKeyState = HotkeyMapper.CheckModifiers();
 
         var hotkeyModel = new HotkeyModel(
@@ -141,6 +162,15 @@ public partial class HotkeyControlDialog : ContentDialog
     {
         ResetUI();
 
+        if (_type.HasFlag(HotkeyType.Global) &&
+            HotkeyMapper.TryGetReservedGlobalHotkeyMessageKey(hotkey, out var resourceKey))
+        {
+            PART_InfoBar.Message = _i18n.GetTranslation(resourceKey);
+            PART_InfoBar.Visibility = Visibility.Visible;
+            SaveBtn.IsEnabled = false;
+            return;
+        }
+
         var registeredHotkey = _hotkeySettings.RegisteredHotkeys
             .Where(x => x.Type.HasFlag(_type) || _type.HasFlag(x.Type))
             .Where(x => x.Hotkey != _cacheHotkey.ToString())
@@ -164,7 +194,7 @@ public partial class HotkeyControlDialog : ContentDialog
                 OverwriteBtn.Visibility = Visibility.Collapsed;
             }
         }
-        else if (!CheckHotkeyAvailability(hotkey, true))
+        else if (!CheckHotkeyAvailability(hotkey, !SingleKeyMode)) // 单键模式下不验证 KeyGesture
         {
             PART_InfoBar.Message = _i18n.GetTranslation("HotkeyUnavailable");
             PART_InfoBar.Visibility = Visibility.Visible;
@@ -181,5 +211,11 @@ public partial class HotkeyControlDialog : ContentDialog
     }
 
     private bool CheckHotkeyAvailability(HotkeyModel hotkey, bool validateKeyGesture)
-        => hotkey.ToString() is "LWin" or "RWin" || (hotkey.Validate(validateKeyGesture) && HotkeyMapper.CheckAvailability(hotkey));
+    {
+        if (_type.HasFlag(HotkeyType.Global) && HotkeyMapper.IsReservedGlobalHotkey(hotkey))
+            return false;
+
+        return hotkey.ToString() is "LWin" or "RWin" ||
+               (hotkey.Validate(validateKeyGesture) && HotkeyMapper.CheckAvailability(hotkey));
+    }
 }

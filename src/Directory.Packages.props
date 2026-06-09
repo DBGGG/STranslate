@@ -12,7 +12,6 @@
     <PackageVersion Include="Hardcodet.NotifyIcon.Wpf" Version="2.0.1" />
     <PackageVersion Include="iNKORE.UI.WPF.Modern" Version="0.10.2.1" />
     <PackageVersion Include="Markdig.Wpf" Version="0.5.0.1" />
-    <PackageVersion Include="MethodBoundaryAspect.Fody" Version="2.0.150" />
     <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.1" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.1" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.1" />
@@ -28,7 +27,7 @@
     <PackageVersion Include="NHotkey.Wpf" Version="3.0.0" />
     <PackageVersion Include="ObservableCollections" Version="3.3.4" />
     <PackageVersion Include="PracticalToolkit.WPF" Version="1.0.4" />
-    <PackageVersion Include="ScreenGrab" Version="1.0.14" />
+    <PackageVersion Include="ScreenGrab" Version="1.0.15" />
     <PackageVersion Include="SemanticVersioning" Version="3.0.0" />
     <PackageVersion Include="Serilog.Extensions.Logging" Version="10.0.0" />
     <PackageVersion Include="Serilog.Sinks.Console" Version="6.0.0" />
