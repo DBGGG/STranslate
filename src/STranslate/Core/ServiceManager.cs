@@ -152,12 +152,73 @@ public class ServiceManager
     }
 
     /// <summary>
+    /// 创建服务的独立副本，并复制其持久化配置。
+    /// </summary>
+    /// <param name="source">要复制的服务。</param>
+    /// <param name="serviceType">服务类型。</param>
+    /// <returns>复制成功时返回新服务；失败时返回 <see langword="null"/>。</returns>
+    internal Service? DuplicateService(Service source, ServiceType serviceType)
+    {
+        var serviceDataCollection = GetServiceDataCollection(serviceType);
+        var sourceDataIndex = serviceDataCollection.FindIndex(data => data.SvcID == source.ServiceID);
+        if (sourceDataIndex < 0)
+        {
+            _logger.LogWarning(
+                "无法复制 {ServiceType} 服务 {ServiceID}，因为未找到对应的服务配置。",
+                serviceType,
+                source.ServiceID);
+            return null;
+        }
+
+        var duplicateServiceId = Guid.NewGuid().ToString("N");
+        var duplicateData = CreateDuplicateServiceData(source, duplicateServiceId, serviceType);
+        Service? duplicate = null;
+
+        try
+        {
+            CopyPluginSettings(source, duplicateServiceId);
+            duplicateData.IconPath = CopyCustomIcon(source, duplicateServiceId);
+
+            duplicate = CreateService(source.MetaData, duplicateData);
+            duplicate.Initialize();
+
+            var sourceRuntimeIndex = _services.IndexOf(source);
+            if (sourceRuntimeIndex >= 0)
+                _services.Insert(sourceRuntimeIndex + 1, duplicate);
+            else
+                _services.Add(duplicate);
+
+            serviceDataCollection.Insert(sourceDataIndex + 1, duplicateData);
+            _serviceSettings.Save();
+            return duplicate;
+        }
+        catch (Exception ex)
+        {
+            RollbackDuplicateService(duplicate, duplicateData, source.MetaData, serviceDataCollection);
+            _logger.LogError(
+                ex,
+                "复制 {ServiceType} 服务 {ServiceID} 失败，已清理新服务 {DuplicateServiceID} 的数据。",
+                serviceType,
+                source.ServiceID,
+                duplicateServiceId);
+            return null;
+        }
+    }
+
+    /// <summary>
     /// 移除服务实例
     /// </summary>
     /// <param name="service">要移除的服务实例</param>
     /// <param name="type">服务类型</param>
     public void RemoveService(Service service, ServiceType type)
     {
+        // 清理服务自定义图标文件（不影响插件默认图标）
+        if (!string.IsNullOrEmpty(service.IconPath) &&
+            service.IconPath != service.MetaData.IconPath)
+        {
+            Helper.TryDeleteFile(service.IconPath);
+        }
+
         service.Dispose();
         _services.Remove(service);
 
@@ -182,6 +243,96 @@ public class ServiceManager
         };
     }
 
+    private static ServiceData CreateDuplicateServiceData(
+        Service source,
+        string duplicateServiceId,
+        ServiceType serviceType) => new()
+    {
+        SvcID = duplicateServiceId,
+        Name = $"{source.DisplayName}_New",
+        // OCR、TTS 和生词本只允许单个服务启用，复制不能改变当前服务选择。
+        IsEnabled = serviceType == ServiceType.Translation && source.IsEnabled,
+        Options = source.Options == null
+            ? null
+            : new TranslationOptions
+            {
+                ExecMode = source.Options.ExecMode,
+                AutoBackTranslation = source.Options.AutoBackTranslation
+            }
+    };
+
+    private static void CopyPluginSettings(Service source, string duplicateServiceId)
+    {
+        var sourcePath = GetPluginSettingsPath(source.MetaData, source.ServiceID);
+        var destinationPath = GetPluginSettingsPath(source.MetaData, duplicateServiceId);
+
+        if (!File.Exists(sourcePath))
+            throw new FileNotFoundException("未找到待复制服务的插件配置文件。", sourcePath);
+
+        Directory.CreateDirectory(source.MetaData.PluginSettingsDirectoryPath);
+        File.Copy(sourcePath, destinationPath);
+    }
+
+    private static string? CopyCustomIcon(Service source, string duplicateServiceId)
+    {
+        if (string.IsNullOrEmpty(source.IconPath) || source.IconPath == source.MetaData.IconPath)
+            return null;
+
+        var iconsDirectory = Path.Combine(source.MetaData.PluginSettingsDirectoryPath, "icons");
+        var destinationPath = Path.Combine(iconsDirectory, $"{duplicateServiceId}{Path.GetExtension(source.IconPath)}");
+
+        Directory.CreateDirectory(iconsDirectory);
+        File.Copy(source.IconPath, destinationPath);
+        return Helper.ToRelativeIconPath(destinationPath, source.MetaData.PluginSettingsDirectoryPath);
+    }
+
+    private void RollbackDuplicateService(
+        Service? duplicate,
+        ServiceData duplicateData,
+        PluginMetaData metaData,
+        List<ServiceData> serviceDataCollection)
+    {
+        if (duplicate != null)
+        {
+            _services.Remove(duplicate);
+            try
+            {
+                if (duplicate.IsInitialized)
+                    duplicate.Dispose();
+                else
+                    duplicate.Plugin.Dispose();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "释放未完成复制的服务 {ServiceID} 时发生异常。", duplicate.ServiceID);
+            }
+        }
+
+        serviceDataCollection.Remove(duplicateData);
+
+        var settingsPath = GetPluginSettingsPath(metaData, duplicateData.SvcID);
+        Helper.TryDeleteFile(settingsPath);
+        Helper.TryDeleteFile($"{settingsPath}.bak");
+        Helper.TryDeleteFile($"{settingsPath}.tmp");
+
+        if (string.IsNullOrEmpty(duplicateData.IconPath))
+            return;
+
+        var iconPath = Helper.ToAbsoluteIconPath(duplicateData.IconPath, metaData.PluginSettingsDirectoryPath);
+        Helper.TryDeleteFile(iconPath);
+
+        var iconsDirectory = Path.GetDirectoryName(iconPath);
+        if (!string.IsNullOrEmpty(iconsDirectory) &&
+            Directory.Exists(iconsDirectory) &&
+            !Directory.EnumerateFileSystemEntries(iconsDirectory).Any())
+        {
+            Helper.TryDeleteDirectory(iconsDirectory);
+        }
+    }
+
+    private static string GetPluginSettingsPath(PluginMetaData metaData, string serviceId) =>
+        Path.Combine(metaData.PluginSettingsDirectoryPath, $"{serviceId}{StorageBase<ServiceSettings>.FileSuffix}");
+
     private Service CreateService(PluginMetaData metaData, ServiceData? settings = null)
     {
         var metaDataClone = metaData.Clone();
@@ -192,7 +343,10 @@ public class ServiceManager
             ServiceID = serviceID,
             MetaData = metaDataClone,
             IsEnabled = settings?.IsEnabled ?? false,
-            DisplayName = settings?.Name ?? metaDataClone.Name
+            DisplayName = settings?.Name ?? metaDataClone.Name,
+            IconPath = string.IsNullOrEmpty(settings?.IconPath)
+                ? string.Empty
+                : Helper.ToAbsoluteIconPath(settings.IconPath, metaDataClone.PluginSettingsDirectoryPath)
         };
 
         // 针对翻译/词典插件，设置执行模式和自动回译选项尝试从缓存加载

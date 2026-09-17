@@ -7,6 +7,8 @@ using System.Windows.Markup;
 using System.Windows.Media;
 using Windows.Win32;
 using Windows.Win32.Foundation;
+using Windows.Win32.Graphics.Gdi;
+using Windows.Win32.Graphics.Dwm;
 using Windows.Win32.UI.WindowsAndMessaging;
 
 namespace STranslate.Helpers;
@@ -92,8 +94,17 @@ public static class Win32Helper
 
     public static bool ForceSetForegroundWindow(nint handle) => ForceSetForegroundWindow(new HWND(handle));
 
+    public static bool ActivateForegroundWindow(Window window) => ActivateForegroundWindow(GetWindowHandle(window));
+
+    public static bool ActivateForegroundWindow(nint handle) => ActivateForegroundWindow(new HWND(handle));
+
+    internal static bool ActivateForegroundWindow(HWND handle)
+        => WindowActivationContext.Select(
+            normal: () => SetForegroundWindow(handle),
+            forceForeground: () => ForceSetForegroundWindow(handle));
+
     /// <summary>
-    /// 外部调用从后台唤起窗口时使用 AttachThreadInput 绕过 Foreground Lockout。
+    /// 强制将窗口带到前台，使用 AttachThreadInput 绕过系统限制。
     /// </summary>
     internal static bool ForceSetForegroundWindow(HWND handle)
     {
@@ -102,38 +113,36 @@ public static class Win32Helper
 
         var currentThreadId = PInvoke.GetCurrentThreadId();
         var foregroundThreadId = PInvoke.GetWindowThreadProcessId(foregroundWnd, out _);
+        var attached = false;
 
-        // 如果前台窗口属于不同的线程，尝试挂接输入
-        bool needDetach = false;
-        if (foregroundThreadId != currentThreadId && foregroundThreadId != 0)
+        try
         {
-            // 挂接当前线程到前台窗口线程
-            needDetach = PInvoke.AttachThreadInput(foregroundThreadId, currentThreadId, true);
+            if (foregroundThreadId != currentThreadId && foregroundThreadId != 0)
+            {
+                attached = PInvoke.AttachThreadInput(foregroundThreadId, currentThreadId, true);
+            }
+
+            var result = PInvoke.SetForegroundWindow(handle);
+
+            if (PInvoke.IsIconic(handle))
+            {
+                PInvoke.ShowWindow(handle, SHOW_WINDOW_CMD.SW_RESTORE);
+            }
+
+            if (!result)
+            {
+                PInvoke.BringWindowToTop(handle);
+            }
+
+            return result || PInvoke.GetForegroundWindow() == handle;
         }
-
-        // 尝试设置前台窗口
-        // 注意：在挂接状态下，这通常会成功
-        var result = PInvoke.SetForegroundWindow(handle);
-
-        // 尝试恢复窗口（如果是最小化）
-        if (PInvoke.IsIconic(handle))
+        finally
         {
-            PInvoke.ShowWindow(handle, SHOW_WINDOW_CMD.SW_RESTORE);
+            if (attached)
+            {
+                PInvoke.AttachThreadInput(foregroundThreadId, currentThreadId, false);
+            }
         }
-
-        if (needDetach)
-        {
-            // 解除挂接
-            PInvoke.AttachThreadInput(foregroundThreadId, currentThreadId, false);
-        }
-
-        // 再次尝试 BringWindowToTop 作为兜底
-        if (!result)
-        {
-            PInvoke.BringWindowToTop(handle);
-        }
-
-        return result || PInvoke.GetForegroundWindow() == handle;
     }
 
     public static bool IsForegroundWindow(Window window) => IsForegroundWindow(GetWindowHandle(window));
@@ -165,6 +174,103 @@ public static class Win32Helper
         var hwnd = GetWindowHandle(Application.Current.MainWindow, true);
         return hwnd;
     }
+
+    #endregion
+
+    #region Window Position
+
+    private const uint SWP_NOZORDER = 0x0004;
+    private const uint SWP_NOACTIVATE = 0x0010;
+    private const uint SWP_SHOWWINDOW = 0x0040;
+    private const uint MONITOR_DEFAULTTONEAREST = 2;
+
+    private enum MonitorDpiType
+    {
+        Effective = 0
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private readonly struct NativePoint(int x, int y)
+    {
+        public readonly int X = x;
+        public readonly int Y = y;
+    }
+
+    /// <summary>
+    /// 使用物理像素设置窗口边界，并可选择是否同步显示窗口。
+    /// </summary>
+    /// <param name="window">需要定位的 WPF 窗口。</param>
+    /// <param name="left">窗口左边缘的物理像素坐标。</param>
+    /// <param name="top">窗口上边缘的物理像素坐标。</param>
+    /// <param name="width">窗口宽度（物理像素）。</param>
+    /// <param name="height">窗口高度（物理像素）。</param>
+    /// <param name="showWindow">是否在定位时同步显示窗口。</param>
+    public static void SetWindowPhysicalBounds(
+        Window window,
+        int left,
+        int top,
+        int width,
+        int height,
+        bool showWindow = true)
+    {
+        var hwnd = new WindowInteropHelper(window).EnsureHandle();
+        var flags = SWP_NOZORDER | SWP_NOACTIVATE;
+        if (showWindow)
+            flags |= SWP_SHOWWINDOW;
+
+        if (!SetWindowPos(
+                hwnd,
+                0,
+                left,
+                top,
+                Math.Max(1, width),
+                Math.Max(1, height),
+                flags))
+        {
+            throw new Win32Exception(Marshal.GetLastPInvokeError());
+        }
+    }
+
+    internal static unsafe bool SetWindowCloaked(Window window, bool cloaked)
+    {
+        var value = cloaked ? 1 : 0;
+        return PInvoke.DwmSetWindowAttribute(
+            GetWindowHandle(window, ensure: true),
+            DWMWINDOWATTRIBUTE.DWMWA_CLOAK,
+            &value,
+            (uint)sizeof(int)).Succeeded;
+    }
+
+    internal static bool FlushDesktopComposition() => PInvoke.DwmFlush().Succeeded;
+
+    public static DpiScale GetDpiScaleForPhysicalPoint(int x, int y)
+    {
+        var monitor = MonitorFromPoint(new NativePoint(x, y), MONITOR_DEFAULTTONEAREST);
+        var hr = GetDpiForMonitor(monitor, MonitorDpiType.Effective, out var dpiX, out var dpiY);
+        return hr == 0 && dpiX > 0 && dpiY > 0
+            ? new DpiScale(dpiX / 96d, dpiY / 96d)
+            : new DpiScale(1, 1);
+    }
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern bool SetWindowPos(
+        nint hWnd,
+        nint hWndInsertAfter,
+        int x,
+        int y,
+        int cx,
+        int cy,
+        uint flags);
+
+    [DllImport("user32.dll")]
+    private static extern HMONITOR MonitorFromPoint(NativePoint pt, uint flags);
+
+    [DllImport("shcore.dll")]
+    private static extern int GetDpiForMonitor(
+        HMONITOR hmonitor,
+        MonitorDpiType dpiType,
+        out uint dpiX,
+        out uint dpiY);
 
     #endregion
 
@@ -254,8 +360,21 @@ public static class Win32Helper
         }
 
         var monitorInfo = MonitorInfo.GetNearestDisplayMonitor(hWnd);
-        return (appBounds.bottom - appBounds.top) == monitorInfo.Bounds.Height &&
-               (appBounds.right - appBounds.left) == monitorInfo.Bounds.Width;
+        var windowBounds = new Rect(
+            appBounds.left,
+            appBounds.top,
+            appBounds.right - appBounds.left,
+            appBounds.bottom - appBounds.top);
+        return IsWindowBoundsFullscreen(windowBounds, monitorInfo.Bounds);
+    }
+
+    internal static bool IsWindowBoundsFullscreen(Rect windowBounds, Rect monitorBounds)
+    {
+        const double tolerance = 1;
+        return Math.Abs(windowBounds.Left - monitorBounds.Left) <= tolerance &&
+               Math.Abs(windowBounds.Top - monitorBounds.Top) <= tolerance &&
+               Math.Abs(windowBounds.Right - monitorBounds.Right) <= tolerance &&
+               Math.Abs(windowBounds.Bottom - monitorBounds.Bottom) <= tolerance;
     }
 
     #endregion

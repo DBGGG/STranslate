@@ -7,11 +7,11 @@ public static class MainHeaderActions
     public const string Ocr = "ocr";
     public const string ImageTranslate = "image_translate";
     public const string ScreenshotTranslate = "screenshot_translate";
-    public const string MouseHook = "mouse_hook";
+    public const string MouseSelectionTranslation = "mouse_selection_translation";
     public const string ColorScheme = "color_scheme";
     public const string HideInput = "hide_input";
-    public const string HistoryNavigation = "history_navigation";
     public const string ServiceSwitcher = "service_switcher";
+    public const string HistoryNavigation = "history_navigation";
 
     public static IReadOnlyList<string> DefaultOrder { get; } =
     [
@@ -20,11 +20,11 @@ public static class MainHeaderActions
         Ocr,
         ImageTranslate,
         ScreenshotTranslate,
-        MouseHook,
+        MouseSelectionTranslation,
         ColorScheme,
         HideInput,
-        HistoryNavigation,
-        ServiceSwitcher
+        ServiceSwitcher,
+        HistoryNavigation
     ];
 
     public static IReadOnlyList<string> All => DefaultOrder;

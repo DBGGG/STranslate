@@ -1,5 +1,27 @@
 Reference this package to develop a plugin for [STranslate](https://github.com/STranslate/STranslate).
 
+## v1.0.15 - 2026-09-04
+
+- `LangEnum` 新增维吾尔语（`Uyghur`）
+
+## v1.0.14 - 2026-08-14
+
+- `IAudioPlayer` 新增 `PlayAsync(AudioData, CancellationToken)`，支持显式播放 MP3、WAV 和裸 PCM
+- `AudioData` 可通过 `PcmAudioFormat` 指定裸 PCM 的采样率、声道、位深与采样编码
+- 现有 `byte[]` 和 URL 播放接口保持兼容，并支持自动识别 MP3/WAV
+
+## v1.0.13 - 2026-07-01
+
+- `Service` 新增 `IconPath` 属性，支持为服务实例设置自定义图标路径（为空时回退 `MetaData.IconPath`）
+
+## v1.0.12 - 2026-06-25
+
+- OCR 能力增强：`IOcrPlugin` 新增 `SupportBoxPoints()`（默认 `false`），声明是否返回图片像素坐标的文本框，图片翻译需要该能力
+- `OcrRequest` 新增 `PixelWidth` / `PixelHeight` 参数，传递图片像素尺寸以便计算坐标
+- `OcrResult` 新增 `Regions` 结构化区域（`OcrRegion` → `OcrParagraph` → `OcrContent`），每级携带 `BoxPoints` 坐标框
+- `OcrResult.Text` 在未提供 `OcrContents` 时回退按区域/段落拼装纯文本，并按 CJK 与标点规则智能补空格
+- 新增 `TextHelper.IsCjk(char)`，判断字符是否属于 CJK（中日韩）文字区域
+
 ## v1.0.11 - 2026-05-22
 
 - LangEnum 添加乌兹别克语 感谢 @boxi-wangji #704

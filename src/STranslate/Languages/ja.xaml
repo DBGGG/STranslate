@@ -26,6 +26,7 @@
     <sys:String x:Key="TimeoutPlaceholder">タイムアウト (秒)</sys:String>
     <sys:String x:Key="SearchFunction">機能検索</sys:String>
     <sys:String x:Key="SearchFunctionToolTip">Ctrl+F で機能を検索</sys:String>
+    <sys:String x:Key="NoResultsFound">結果が見つかりません</sys:String>
     <sys:String x:Key="Function">機能</sys:String>
     <sys:String x:Key="Appearance">外観</sys:String>
     <sys:String x:Key="AutoTranslateEnabled">自動翻訳を有効化</sys:String>
@@ -50,9 +51,9 @@
     <sys:String x:Key="General_DefaultSourceLanguage">デフォルトの翻訳元言語</sys:String>
     <sys:String x:Key="General_DefaultSourceLanguageDescription">自動検出に失敗した場合、この言語を使用します。</sys:String>
     <sys:String x:Key="General_FirstLanguage">第一言語</sys:String>
-    <sys:String x:Key="General_FirstLanguageDescription">任意の翻訳シーン（画像翻訳を含む）で翻訳先が自動、かつ翻訳元が他の言語（第二言語を含む）の場合、翻訳先に第一言語を使用します。</sys:String>
+    <sys:String x:Key="General_FirstLanguageDescription">任意の翻訳シーンで翻訳先が自動、かつ翻訳元が他の言語（第二言語を含む）の場合、翻訳先に第一言語を使用します。</sys:String>
     <sys:String x:Key="General_SecondLanguage">第二言語</sys:String>
-    <sys:String x:Key="General_SecondLanguageDescription">任意の翻訳シーン（画像翻訳を含む）で翻訳先が自動、かつ翻訳元が第一言語の場合、翻訳先に第二言語を使用します。</sys:String>
+    <sys:String x:Key="General_SecondLanguageDescription">任意の翻訳シーンで翻訳先が自動、かつ翻訳元が第一言語の場合、翻訳先に第二言語を使用します。</sys:String>
     <sys:String x:Key="General_HttpTimeout">タイムアウト</sys:String>
     <sys:String x:Key="General_HttpTimeoutDescription">ネットワークリクエストのタイムアウト時間。単位：秒。</sys:String>
     <sys:String x:Key="General_UseClipboardOutput">テキスト出力にクリップボードを使用</sys:String>
@@ -66,6 +67,8 @@
     <sys:String x:Key="General_AutoTranslateButtonVisible">メイン画面に自動翻訳ボタンを表示</sys:String>
     <sys:String x:Key="General_AutoTranslateOnPromptChanged">プロンプト切替後に自動翻訳</sys:String>
     <sys:String x:Key="General_AutoTranslateOnPromptChangedDescription">AI翻訳サービスのプロンプトを切り替えた直後に、翻訳を再実行します。</sys:String>
+    <sys:String x:Key="General_IncrementalClearInput">增量翻訳時に入力をクリア</sys:String>
+    <sys:String x:Key="General_IncrementalClearInputDescription">有効時（既定）は增量翻訳のトリガー時に入力ボックスをクリアし、セッション内の選択テキストは引き続き追加されます。無効時は旧ロジックを維持し、既存内容をクリアせずそのまま追加します。</sys:String>
     <sys:String x:Key="General_AutoTranslateDelay">自動翻訳の遅延</sys:String>
     <sys:String x:Key="General_AutoTranslateDelayDescription">入力後の待機時間。単位：ミリ秒。</sys:String>
     <sys:String x:Key="General_LineBreakHandleType">改行処理</sys:String>
@@ -78,7 +81,7 @@
     <sys:String x:Key="General_SelectedTextFetchTimeoutDescription">コピー操作後、新しいクリップボードテキストをポーリングするタイムアウトです。単位：ミリ秒。更新されるとすぐに戻ります。PDFアプリの更新が遅い場合は値を上げてください。</sys:String>
     <sys:String x:Key="General_SelectedTextFetchTimeoutPlaceholder">500</sys:String>
     <sys:String x:Key="General_CrosswordFetchFailedFallbackTarget">選択テキスト取得失敗時の戻り先</sys:String>
-    <sys:String x:Key="General_CrosswordFetchFailedFallbackTargetDescription">選択テキストの取得に失敗したとき、入力翻訳へ戻るか、メイン画面の表示のみにするかを選択します。</sys:String>
+    <sys:String x:Key="General_CrosswordFetchFailedFallbackTargetDescription">選択テキストの取得に失敗したとき、入力翻訳を開くか、メイン画面を表示するか、トレイ通知のみを送るかを選択します。</sys:String>
     <sys:String x:Key="General_ImageQuality">画質</sys:String>
     <sys:String x:Key="General_ImageQualityDescription">画像処理時の画質調整。オンラインOCRサービスによっては画像サイズが制限される場合があります。</sys:String>
     <sys:String x:Key="General_DoubleClickTrayFunction">トレイアイコンのダブルクリック機能</sys:String>
@@ -105,8 +108,14 @@
     <sys:String x:Key="General_HideInputBoxButtonVisible">メイン画面に入力ボックス非表示ボタンを表示</sys:String>
     <sys:String x:Key="General_HideLanguageControl">言語選択コントロールを隠す</sys:String>
     <sys:String x:Key="General_HideLanguageControlDescription">入力ボックスを隠す際、言語選択コントロールも一緒に隠すかどうか。</sys:String>
-    <sys:String x:Key="General_ShowMouseHook">マウスフックを表示</sys:String>
-    <sys:String x:Key="General_ShowMouseHookDescription">メイン画面にマウス選択翻訳の有効/無効切替アイコンを表示するかどうか。</sys:String>
+    <sys:String x:Key="General_ShowMouseSelectionTranslation">マウス選択の直接翻訳を表示</sys:String>
+    <sys:String x:Key="General_ShowMouseSelectionTranslationDescription">メイン画面にマウス選択の直接翻訳スイッチを表示します。</sys:String>
+    <sys:String x:Key="General_EnableMouseSelectionTranslation">マウス選択の直接翻訳</sys:String>
+    <sys:String x:Key="General_EnableMouseSelectionTranslationDescription">ドラッグまたはダブルクリックで選択したテキストを直ちにコピーして翻訳します。</sys:String>
+    <sys:String x:Key="General_EnableMouseSelectionIcon">選択後にフローティングアイコンを表示</sys:String>
+    <sys:String x:Key="General_EnableMouseSelectionIconDescription">ドラッグまたはダブルクリックでテキストを選択するとアイコンを表示し、クリック時に翻訳します。両方が有効な場合は直接翻訳が優先されます。</sys:String>
+    <sys:String x:Key="MouseSelectionIconTranslate">翻訳</sys:String>
+    <sys:String x:Key="MouseSelectionTranslationRequiresTopmost">マウス選択の直接翻訳が有効な間、ウィンドウを最前面に保つ必要があります。</sys:String>
     <sys:String x:Key="General_ShowHistoryNavigation">履歴ナビゲーションを表示</sys:String>
     <sys:String x:Key="General_ShowHistoryNavigationDescription">メイン画面に前/次の翻訳履歴へ移動するアイコンを表示するかどうか。</sys:String>
     <sys:String x:Key="General_ShowOcrButton">OCRボタンを表示</sys:String>
@@ -169,8 +178,9 @@
     <sys:String x:Key="Hotkey_CrosswordTranslateByCtrlSameCDescription">テキストを選択し、Ctrl+C+C を素早く押して翻訳します。</sys:String>
     <sys:String x:Key="CrosswordTranslateFetchFailed">選択テキストの取得に失敗しました。入力翻訳を開きました。</sys:String>
     <sys:String x:Key="CrosswordTranslateFetchFailedShowWindow">選択テキストの取得に失敗しました。メイン画面を表示しました。</sys:String>
-    <sys:String x:Key="Hotkey_MouseHookTranslate">マウス選択監視</sys:String>
-    <sys:String x:Key="Hotkey_MouseHookTranslateDescription">マウス選択による翻訳トリガーの監視を有効/無効化するホットキー。</sys:String>
+    <sys:String x:Key="CrosswordTranslateFetchFailedNotifyOnly">選択テキストを取得できませんでした。テキストを選択して再試行してください。</sys:String>
+    <sys:String x:Key="Hotkey_MouseSelectionTranslation">マウス選択の直接翻訳</sys:String>
+    <sys:String x:Key="Hotkey_MouseSelectionTranslationDescription">マウス選択の直接翻訳を有効または無効にします。</sys:String>
     <sys:String x:Key="Hotkey_ReplaceTranslate">置換翻訳</sys:String>
     <sys:String x:Key="Hotkey_ReplaceTranslateDescription">選択したテキストを翻訳し、元のテキストを置換するホットキー。</sys:String>
     <sys:String x:Key="Hotkey_ScreenshotTranslate">スクショ翻訳</sys:String>
@@ -206,6 +216,7 @@
     <sys:String x:Key="Hotkey_OcrImTransWindow">OCR | 画像翻訳画面ホットキー</sys:String>
     <sys:String x:Key="Hotkey_ReExecuteOcr">文字認識 | 画像翻訳を再実行</sys:String>
     <sys:String x:Key="Hotkey_SwitchImage">レンダリング画像/マークアップ画像の切替</sys:String>
+    <sys:String x:Key="Hotkey_PinImageTranslate">画像翻訳をピン留め（コンパクト）</sys:String>
     <sys:String x:Key="Hotkey_QrCode">QRコード認識</sys:String>
     <sys:String x:Key="Hotkey_QrCodeDescription">このホットキーはOCR画面でのみ有効です。</sys:String>
     <sys:String x:Key="Hotkey_IncrementalTranslate">増分翻訳</sys:String>
@@ -301,25 +312,39 @@
     <sys:String x:Key="Network_HelpBypassListContent" xml:space="preserve">複数のアドレスはセミコロン(;)で区切ります。ワイルドカード(*)に対応：&#10;localhost;127.*;10.*;192.168.*;*.example.com</sys:String>
     <sys:String x:Key="Network_HelpEffectiveness">反映について</sys:String>
     <sys:String x:Key="Network_HelpEffectivenessContent" xml:space="preserve">プロキシ設定の変更は約2分後に反映されます&#10;即時反映させるには再起動が必要です</sys:String>
+    <sys:String x:Key="ProxyTesting">接続をテスト中...</sys:String>
+    <sys:String x:Key="ProxyTestSuccess">接続に成功しました！現在のIP情報：{0}</sys:String>
+    <sys:String x:Key="ProxyTestFailed">接続に失敗しました。プロキシ設定を確認してください</sys:String>
+    <sys:String x:Key="ProxyTestError">テストに失敗しました：{0}</sys:String>
+    <sys:String x:Key="ExternalCallStartFailed">サービスの起動に失敗しました。ポートを設定し直してください: {0}</sys:String>
 
     <sys:String x:Key="Standalone_OcrShowAnnotationHeader">検出結果を表示</sys:String>
     <sys:String x:Key="Standalone_OcrShowAnnotationDescription">元画像/検出結果画像の表示切替</sys:String>
     <sys:String x:Key="Standalone_OcrShowTextControlHeader">テキストボックスを表示</sys:String>
     <sys:String x:Key="Standalone_OcrShowTextControlDescription">右側のテキストボックスの表示/非表示</sys:String>
+    <sys:String x:Key="Standalone_OcrLanguageHeader">OCR ウィンドウの認識言語</sys:String>
+    <sys:String x:Key="Standalone_OcrLanguageDescription">独立した OCR ウィンドウで使用する OCR 認識言語です。</sys:String>
     <sys:String x:Key="Standalone_ImTranShowAnnotatedHeader">検出結果を表示</sys:String>
     <sys:String x:Key="Standalone_ImTranShowAnnotatedDescription">翻訳結果/検出結果画像の表示切替</sys:String>
     <sys:String x:Key="Standalone_ImTranShowTextControlHeader">テキストボックスを表示</sys:String>
     <sys:String x:Key="Standalone_ImTranShowTextControlDescription">右側のテキストボックスの表示/非表示</sys:String>
-    <sys:String x:Key="Standalone_LayoutAnalysisHeader">レイアウト分析設定</sys:String>
-    <sys:String x:Key="Standalone_LayoutAnalysisDescription">認識結果の結合設定</sys:String>
-    <sys:String x:Key="Standalone_VerticalThresholdHeader">垂直方向の隣接検出閾値比率</sys:String>
-    <sys:String x:Key="Standalone_VerticalThresholdDescription" xml:space="preserve">上下に隣接するテキストブロックの結合感度を制御&#10;0.1-0.3: 厳格モード。非常に近い行のみ結合&#10;0.5-0.8: 標準モード。段落内の行を結合&#10;1.0-3.0: 緩いモード。離れたテキストブロックも結合&#10;&gt;5.0: 垂直分布するほぼ全てのテキストを結合</sys:String>
-    <sys:String x:Key="Standalone_HorizontalThresholdHeader">水平方向の隣接検出閾値比率</sys:String>
-    <sys:String x:Key="Standalone_HorizontalThresholdDescription" xml:space="preserve">左右に隣接するテキストブロックの結合感度を制御&#10;0.1-0.3: 厳格モード。非常に近い単語のみ結合&#10;0.5-0.8: 標準モード。行内のフレーズを結合&#10;1.0-2.0: 緩いモード。分欄テキストを結合&#10;&gt;5.0: 水平分布するほぼ全てのテキストを結合</sys:String>
-    <sys:String x:Key="Standalone_LineSpacingThresholdHeader">改行検出閾値比率</sys:String>
-    <sys:String x:Key="Standalone_LineSpacingThresholdDescription" xml:space="preserve">テキスト結合時の改行追加を制御&#10;0.1-0.2: 厳格な改行。距離がわずかでも改行&#10;0.3-0.5: 標準的な改行。多くの文書に適する&#10;0.8-1.0: 緩い改行。距離が大きい場合のみ改行&#10;&gt;2.0: ほぼ改行なし。全テキストを連結</sys:String>
-    <sys:String x:Key="Standalone_WordSpacingThresholdHeader">単語間隔検出閾値比率</sys:String>
-    <sys:String x:Key="Standalone_WordSpacingThresholdDescription" xml:space="preserve">テキスト結合時のスペース追加を制御&#10;0.1-0.2: 標準的なスペース間隔&#10;0.3-0.5: 緩いスペース間隔&#10;&gt;1.0: ほぼスペースを追加しない</sys:String>
+    <sys:String x:Key="Standalone_ImTranWindowModeHeader">画像翻訳ウィンドウモード</sys:String>
+    <sys:String x:Key="Standalone_ImTranWindowModeDescription">画像翻訳結果を独立ウィンドウまたはコンパクトなフローティングウィンドウで表示します。</sys:String>
+    <sys:String x:Key="Standalone_ImTranOcrLanguageHeader">画像翻訳 OCR 認識言語</sys:String>
+    <sys:String x:Key="Standalone_ImTranOcrLanguageDescription">画像翻訳の OCR 段階で使用する認識言語です。</sys:String>
+    <sys:String x:Key="Standalone_ImTranCompactOcrLanguageHeader">コンパクトウィンドウに認識言語を表示</sys:String>
+    <sys:String x:Key="Standalone_ImTranCompactOcrLanguageDescription">画像翻訳コンパクトウィンドウの下部ツールバーに OCR 認識言語の選択を表示します。</sys:String>
+    <sys:String x:Key="Standalone_LayoutAnalysisHeader">テキスト分割設定</sys:String>
+    <sys:String x:Key="Standalone_LayoutAnalysisDescription">認識結果の分割と結合方法を設定します。</sys:String>
+    <sys:String x:Key="Standalone_ImTranLanguageDetector">画像翻訳言語検出器</sys:String>
+    <sys:String x:Key="Standalone_ImTranLocalDetector">ローカル認識の中英字比率</sys:String>
+    <sys:String x:Key="Standalone_ImTranLocalDetectorDescription">画像翻訳「ローカル認識」の中英文の場合、英字が全字に占める割合のみに適用されます。</sys:String>
+    <sys:String x:Key="Standalone_ImTranDefaultSourceLanguage">デフォルトの元言語</sys:String>
+    <sys:String x:Key="Standalone_ImTranDefaultSourceLanguageDescription">画像翻訳の自動検出に失敗した場合、この言語を使用します。</sys:String>
+    <sys:String x:Key="Standalone_ImTranFirstLanguage">第一言語</sys:String>
+    <sys:String x:Key="Standalone_ImTranFirstLanguageDescription">画像翻訳の翻訳先が自動、かつ翻訳元が他の言語（第二言語を含む）の場合、翻訳先に第一言語を使用します。</sys:String>
+    <sys:String x:Key="Standalone_ImTranSecondLanguage">第二言語</sys:String>
+    <sys:String x:Key="Standalone_ImTranSecondLanguageDescription">画像翻訳の翻訳先が自動、かつ翻訳元が第一言語の場合、翻訳先に第二言語を使用します。</sys:String>
 
     <sys:String x:Key="Total">計</sys:String>
     <sys:String x:Key="Item">件</sys:String>
@@ -364,7 +389,7 @@
     <sys:String x:Key="ConfirmDeleteService">本当にサービス '{0}' を削除しますか？</sys:String>
     <sys:String x:Key="Close">閉じる</sys:String>
     <sys:String x:Key="LogLevel">ログレベル</sys:String>
-    <sys:String x:Key="ConfirmRestartAndBackup">再起動して設定をバックアップしますか？</sys:String>
+    <sys:String x:Key="ConfirmRestartAndBackup" xml:space="preserve">再起動して設定をバックアップしますか？&#10;プラグインが多い場合、圧縮に時間がかかることがあります。圧縮中はアプリケーションを手動で起動しないでください。自動再起動後もアップロードが続くため、バックアップ結果の通知が届くまでアプリケーションを終了しないでください。</sys:String>
     <sys:String x:Key="ConfirmRestartAndRestore">再起動して設定を復元しますか？</sys:String>
     <sys:String x:Key="SelectBackupFile">バックアップファイルを選択</sys:String>
     <sys:String x:Key="SelectRestoreFile">復元ファイルを選択</sys:String>
@@ -373,6 +398,7 @@
     <sys:String x:Key="CheckConfigOrLog">設定を確認するかログを参照してください</sys:String>
     <sys:String x:Key="BackupSuccess">バックアップ成功 [{0}]</sys:String>
     <sys:String x:Key="BackupFailed">バックアップ失敗。ログを確認してください</sys:String>
+    <sys:String x:Key="BackupUploading">バックアップをアップロードしています。しばらくお待ちください。</sys:String>
     <sys:String x:Key="DownloadSuccess">ダウンロード成功</sys:String>
     <sys:String x:Key="DownloadFailed">ダウンロード失敗：{0} {1}</sys:String>
     <sys:String x:Key="DownloadException">ダウンロード例外：{0}</sys:String>
@@ -384,6 +410,8 @@
     <sys:String x:Key="WebDavAddress">WebDav アドレス</sys:String>
     <sys:String x:Key="WebDavUsername">WebDav ユーザー名</sys:String>
     <sys:String x:Key="WebDavPassword">WebDav パスワード</sys:String>
+    <sys:String x:Key="WebDavBackupNotice">WebDAV バックアップについて</sys:String>
+    <sys:String x:Key="WebDavBackupNoticeDescription" xml:space="preserve">WebDAV バックアップは圧縮とアップロードの2段階で行われます。圧縮中はアプリケーションを手動で起動しないでください。自動再起動後もアップロードが続き、バックアップ結果の通知が届くと処理は完了です。&#10;プラグインが多い場合、圧縮に時間がかかることがあります。&#10;WebDAV サービスへの接続が不安定な場合は、「設定 → ネットワーク → HTTP タイムアウト」でタイムアウト時間を長くしてください。</sys:String>
     <sys:String x:Key="Backup">バックアップ</sys:String>
     <sys:String x:Key="CreateBackup">バックアップ作成</sys:String>
     <sys:String x:Key="Restore">復元</sys:String>
@@ -402,6 +430,7 @@
     <sys:String x:Key="Add">追加</sys:String>
     <sys:String x:Key="Clear">クリア</sys:String>
     <sys:String x:Key="Delete">削除</sys:String>
+    <sys:String x:Key="Rename">名前を変更</sys:String>
     <sys:String x:Key="Overwrite">上書き</sys:String>
     <sys:String x:Key="Save">保存</sys:String>
     <sys:String x:Key="Confirm">確認</sys:String>
@@ -416,7 +445,10 @@
     <sys:String x:Key="Exit">終了</sys:String>
     <sys:String x:Key="Reset">リセット</sys:String>
     <sys:String x:Key="Retry">再試行</sys:String>
+    <sys:String x:Key="Icon">アイコン</sys:String>
     <sys:String x:Key="Duplicate">複製</sys:String>
+    <sys:String x:Key="ChangeIcon">アイコン変更</sys:String>
+    <sys:String x:Key="ResetIcon">アイコンリセット</sys:String>
     <sys:String x:Key="Official">公式</sys:String>
     <sys:String x:Key="IdentifiedLanguageLabel">検出言語：</sys:String>
     <sys:String x:Key="On">オン</sys:String>
@@ -436,7 +468,7 @@
     <sys:String x:Key="WelcomeSetup_LanguageDescription">インターフェイスの言語を選択します。変更は既存の言語設定ですぐに反映されます。</sys:String>
     <sys:String x:Key="WelcomeSetup_Services">サービス設定</sys:String>
     <sys:String x:Key="WelcomeSetup_TranslateServices">翻訳サービス</sys:String>
-    <sys:String x:Key="WelcomeSetup_OcrTtsServices">OCR / TTS サービス</sys:String>
+    <sys:String x:Key="WelcomeSetup_OcrServices">OCR サービス</sys:String>
     <sys:String x:Key="WelcomeSetup_SpecialServices">専用サービス</sys:String>
     <sys:String x:Key="WelcomeSetup_Hotkeys">ホットキー</sys:String>
     <sys:String x:Key="WelcomeSetup_SelectService">サービスを選択</sys:String>
@@ -547,6 +579,7 @@
     <sys:String x:Key="LangEnumDutch">オランダ語</sys:String>
     <sys:String x:Key="LangEnumUkrainian">ウクライナ語</sys:String>
     <sys:String x:Key="LangEnumUzbek">ウズベク語</sys:String>
+    <sys:String x:Key="LangEnumUyghur">ウイグル語</sys:String>
 
     <sys:String x:Key="LanguageDetectorTypeLocal">ローカル認識</sys:String>
     <sys:String x:Key="LanguageDetectorTypeBaidu">Baidu認識</sys:String>
@@ -566,7 +599,7 @@
     <sys:String x:Key="TextSeparatorHandleTypeHyphen">ハイフンを処理</sys:String>
     <sys:String x:Key="TextSeparatorHandleTypeUnderscoreAndHyphen">アンダースコアとハイフンを処理</sys:String>
     <sys:String x:Key="TextSeparatorHandleScopeNone">無効</sys:String>
-    <sys:String x:Key="TextSeparatorHandleScopeMouseHook">マウス選択監視</sys:String>
+    <sys:String x:Key="TextSeparatorHandleScopeMouseSelection">マウス選択</sys:String>
     <sys:String x:Key="TextSeparatorHandleScopeCrossword">選択翻訳 / Ctrl+C+C</sys:String>
     <sys:String x:Key="TextSeparatorHandleScopeIncremental">増分翻訳</sys:String>
     <sys:String x:Key="TextSeparatorHandleScopeClipboardMonitor">クリップボード監視</sys:String>
@@ -574,6 +607,7 @@
     <sys:String x:Key="TextSeparatorHandleScopeSilentOcr">サイレント OCR</sys:String>
     <sys:String x:Key="CrosswordFetchFailedFallbackTargetInputTranslate">入力翻訳</sys:String>
     <sys:String x:Key="CrosswordFetchFailedFallbackTargetShowWindow">メイン画面を表示</sys:String>
+    <sys:String x:Key="CrosswordFetchFailedFallbackTargetNotifyOnly">通知のみ</sys:String>
 
     <sys:String x:Key="PluginTypeAll">全プラグイン</sys:String>
     <sys:String x:Key="PluginTypeTranslate">テキスト翻訳</sys:String>
@@ -594,12 +628,12 @@
     <sys:String x:Key="ProxyTypeSocks5">Socks5プロキシ</sys:String>
     <sys:String x:Key="ProxyTypeNone">プロキシなし</sys:String>
 
-    <sys:String x:Key="LayoutAnalysisModeMergeAll">全て結合</sys:String>
-    <sys:String x:Key="LayoutAnalysisModeStrictParagraph">厳格な段落</sys:String>
-    <sys:String x:Key="LayoutAnalysisModeStandardDocument">標準ドキュメント</sys:String>
-    <sys:String x:Key="LayoutAnalysisModeColumnDocument">多段組みドキュメント</sys:String>
+    <sys:String x:Key="LayoutAnalysisModeAuto">自動</sys:String>
+    <sys:String x:Key="LayoutAnalysisModeProvider">サービス分割</sys:String>
+    <sys:String x:Key="LayoutAnalysisModeSmart">スマート分割</sys:String>
     <sys:String x:Key="LayoutAnalysisModeNoMerge">結合しない</sys:String>
-    <sys:String x:Key="LayoutAnalysisModeUserDefined">カスタム</sys:String>
+    <sys:String x:Key="ImageTranslateWindowModeStandalone">独立ウィンドウ</sys:String>
+    <sys:String x:Key="ImageTranslateWindowModeCompact">コンパクトウィンドウ</sys:String>
 
     <sys:String x:Key="WindowScreenTypeRememberLastLaunchLocation">前回の位置を記憶</sys:String>
     <sys:String x:Key="WindowScreenTypeCursor">マウスカーソルのある画面</sys:String>
@@ -656,7 +690,7 @@
     <sys:String x:Key="DoubleClickTrayFunctionScreenshotTranslate">スクショ翻訳</sys:String>
     <sys:String x:Key="DoubleClickTrayFunctionOCR">文字認識</sys:String>
     <sys:String x:Key="DoubleClickTrayFunctionOpenSettingsWindow">設定ウィンドウを開く</sys:String>
-    <sys:String x:Key="DoubleClickTrayFunctionToggleMouseHook">マウス取込切替</sys:String>
+    <sys:String x:Key="DoubleClickTrayFunctionToggleMouseSelectionTranslation">マウス選択の直接翻訳を切替</sys:String>
     <sys:String x:Key="DoubleClickTrayFunctionToggleGlobalHotkeys">グローバルホットキー切替</sys:String>
     <sys:String x:Key="DoubleClickTrayFunctionExit">終了</sys:String>
 
@@ -667,6 +701,9 @@
     <sys:String x:Key="SelectPluginFile">プラグインファイルを選択</sys:String>
     <sys:String x:Key="PluginInstallFailed">プラグインのインストールに失敗</sys:String>
     <sys:String x:Key="PluginInstallSuccess">プラグインのインストールに成功</sys:String>
+    <sys:String x:Key="PluginVersionParseFailed">プラグインのバージョンを解析できません: {0}</sys:String>
+    <sys:String x:Key="PluginVersionTooOld">プラグインのバージョンが古すぎます: {0} v{1}、現在インストール済みのバージョンは v{2} です。</sys:String>
+    <sys:String x:Key="PluginUpgradeAvailable">新しいバージョン (v{0}) にアップグレードできます。</sys:String>
     <sys:String x:Key="PluginDeleteConfirm" xml:space="preserve">開発者 {0}&#10;バージョン {1}&#10;プラグイン「{2}」を削除しますか？</sys:String>
     <sys:String x:Key="PluginDeleteFailed">プラグインの削除に失敗</sys:String>
     <sys:String x:Key="PluginDeleteForRestart">プラグインは削除対象としてマークされました。再起動後に反映されます。</sys:String>
@@ -697,6 +734,12 @@
     <sys:String x:Key="BuiltIn">内蔵</sys:String>
     <sys:String x:Key="PreInstall">プリインストール</sys:String>
     <sys:String x:Key="Extend">拡張</sys:String>
+    <sys:String x:Key="AddTranslationService">翻訳サービスを追加</sys:String>
+    <sys:String x:Key="AddOcrService">文字認識サービスを追加</sys:String>
+    <sys:String x:Key="AddTtsService">音声合成サービスを追加</sys:String>
+    <sys:String x:Key="AddVocabularyService">単語帳サービスを追加</sys:String>
+    <sys:String x:Key="AddService">サービスを追加</sys:String>
+    <sys:String x:Key="DictionaryServiceNotSupportReplace">辞書サービスは置換機能に対応していません。</sys:String>
 
     <sys:String x:Key="PlayPronunciation">発音を再生</sys:String>
     <sys:String x:Key="Plural">複数形</sys:String>
@@ -729,8 +772,11 @@
     <sys:String x:Key="OcrSettingsToolTip" xml:space="preserve">左クリック -> 独立設定画面&#10;Ctrl+左クリック -> 文字認識設定</sys:String>
 
     <sys:String x:Key="RecognizeLanguage">認識言語</sys:String>
+    <sys:String x:Key="General_ScreenshotOcrLanguageHeader">スクリーンショット/サイレント OCR 認識言語</sys:String>
+    <sys:String x:Key="General_ScreenshotOcrLanguageDescription">スクリーンショット翻訳とサイレント OCR で使用する OCR 認識言語です。</sys:String>
     <sys:String x:Key="TranslateLanguage">翻訳言語</sys:String>
     <sys:String x:Key="ImageTranslateLanguageIndependentToolTip">画像翻訳ウィンドウの翻訳言語はメインウィンドウとは独立しています。ここで変更してもメインウィンドウには影響しません。</sys:String>
+    <sys:String x:Key="ImageTranslateLayoutAnalysisToolTip">画像翻訳の OCR テキストの分割・結合方法を選択します。再実行後に反映されます。</sys:String>
     <sys:String x:Key="ImTranSettingsToolTip" xml:space="preserve">左クリック -> 独立設定画面&#10;Ctrl+左クリック -> 文字認識設定&#10;Alt+左クリック -> テキスト翻訳設定</sys:String>
 
     <sys:String x:Key="CopySuccess">コピー成功</sys:String>
@@ -801,4 +847,9 @@
     <sys:String x:Key="EditPrompt_Content">編集</sys:String>
     <sys:String x:Key="Temperature">温度 (Temperature)</sys:String>
     <sys:String x:Key="Temperature_Description">モデル出力のランダム性を制御します</sys:String>
+    <sys:String x:Key="ImageTranslatePin">ピン留め</sys:String>
+    <sys:String x:Key="ImageTranslatePinFailed">ピン留めに失敗しました</sys:String>
+    <sys:String x:Key="ImageTranslatePinnedCopyAll">全文をコピー</sys:String>
+    <sys:String x:Key="ImageTranslatePinnedShowOriginal">元画像を表示</sys:String>
+    <sys:String x:Key="ImageTranslatePinnedShowTranslation">翻訳を表示</sys:String>
 </ResourceDictionary>

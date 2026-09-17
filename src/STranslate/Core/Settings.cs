@@ -5,9 +5,11 @@ using Serilog.Core;
 using Serilog.Events;
 using STranslate.Helpers;
 using STranslate.Plugin;
+using STranslate.Services;
 using STranslate.Views;
 using System.ComponentModel;
 using System.Drawing.Imaging;
+using System.Text.Json.Serialization;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
@@ -67,7 +69,11 @@ public partial class Settings : ObservableObject
 
     [ObservableProperty] public partial bool IsHideInputVisible { get; set; } = true;
 
-    [ObservableProperty] public partial bool IsMouseHookVisible { get; set; } = true;
+    [ObservableProperty] public partial bool IsMouseSelectionTranslationVisible { get; set; } = true;
+
+    [ObservableProperty] public partial bool IsMouseSelectionTranslationEnabled { get; set; } = false;
+
+    [ObservableProperty] public partial bool IsMouseSelectionIconEnabled { get; set; } = false;
 
     [ObservableProperty] public partial bool IsHistoryNavigationVisible { get; set; } = true;
 
@@ -87,6 +93,8 @@ public partial class Settings : ObservableObject
     [ObservableProperty] public partial bool CopyAfterOcr { get; set; }
 
     [ObservableProperty] public partial bool FocusInputAfterScreenshotTranslate { get; set; } = true;
+
+    [ObservableProperty] public partial LangEnum ScreenshotOcrLanguage { get; set; } = LangEnum.Auto;
 
     [ObservableProperty] public partial int HttpTimeout { get; set; } = 30;
 
@@ -125,7 +133,14 @@ public partial class Settings : ObservableObject
     /// 粘贴时自动翻译
     /// </summary>
     [ObservableProperty] public partial bool TranslateOnPaste { get; set; } = true;
-    
+
+    /// <summary>
+    /// 增量翻译触发时清空原本内容（默认 true）。
+    /// true：按下增量翻译键时清空输入框，本次会话内选中文本仍累积追加；
+    /// false：保留旧逻辑，不清空原有内容，直接追加。
+    /// </summary>
+    [ObservableProperty] public partial bool IncrementalClearInput { get; set; } = true;
+
     /// <summary>
     /// 切换提示词后自动翻译
     /// </summary>
@@ -215,90 +230,13 @@ public partial class Settings : ObservableObject
     [ObservableProperty] public partial ImageQuality ImageQuality { get; set; } = ImageQuality.Medium;
 
     #region Layout Analysis
-    /* 版面分析参数配置
-     *
-     * 1.全部合并
-     * private const double VerticalThresholdRatio = 6.0;
-     * private const double HorizontalThresholdRatio = 6.0;
-     * private const double LineSpacingThresholdRatio = 0.3;
-     * private const double WordSpacingThresholdRatio = 0.2;
-     *
-     * 2.严格段落分析（保持原始结构）
-     * private const double VerticalThresholdRatio = 0.3;
-     * private const double HorizontalThresholdRatio = 0.2;
-     * private const double LineSpacingThresholdRatio = 0.2;
-     * private const double WordSpacingThresholdRatio = 0.1;
-     *
-     * 3.标准文档分析（推荐默认值）
-     * private const double VerticalThresholdRatio = 0.8;
-     * private const double HorizontalThresholdRatio = 0.5;
-     * private const double LineSpacingThresholdRatio = 0.3;
-     * private const double WordSpacingThresholdRatio = 0.2;
-     *
-     * 4.分栏文档分析（合并左右分栏）
-     * private const double VerticalThresholdRatio = 0.6;
-     * private const double HorizontalThresholdRatio = 2.0;     // 增大以跨越分栏间距
-     * private const double LineSpacingThresholdRatio = 0.3;
-     * private const double WordSpacingThresholdRatio = 0.2;
-     *
-     * 5.不合并任何文本块
-     * private const double VerticalThresholdRatio = 0.0;       // 设置为0，不允许垂直合并
-     * private const double HorizontalThresholdRatio = 0.0;     // 设置为0，不允许水平合并
-     * private const double LineSpacingThresholdRatio = 0.3;    // 这两个参数在不合并时不会被使用
-     * private const double WordSpacingThresholdRatio = 0.2;    // 这两个参数在不合并时不会被使用
-     */
-    [ObservableProperty] public partial LayoutAnalysisMode LayoutAnalysisMode { get; set; } = LayoutAnalysisMode.StandardDocument;
-
-    /// <summary>
-    /// 垂直相邻检测阈值比例
-    /// 作用: 控制上下相邻文本块的合并敏感度
-    /// 计算: 阈值 = Math.Min(rect1.Height, rect2.Height)* VerticalThresholdRatio
-    /// 调整建议:
-    ///     0.1-0.3: 严格模式，只合并非常接近的行
-    ///     0.5-0.8: 标准模式，合并段落内的行
-    ///     1.0-3.0: 宽松模式，合并距离较远的文本块
-    ///     >5.0: 几乎合并所有垂直分布的文本
-    /// </summary>
-    [ObservableProperty] public partial double VerticalThresholdRatio { get; set; } = 0.8;
-
-    /// <summary>
-    /// 水平相邻检测阈值比例
-    /// 作用: 控制左右相邻文本块的合并敏感度
-    /// 计算: 阈值 = Math.Min(rect1.Width, rect2.Width)* HorizontalThresholdRatio
-    /// 调整建议:
-    ///     0.1-0.3: 严格模式，只合并非常接近的词
-    ///     0.5-0.8: 标准模式，合并同行内的词组
-    ///     1.0-2.0: 宽松模式，合并分栏文本
-    ///     >5.0: 几乎合并所有水平分布的文本
-    /// </summary>
-    [ObservableProperty] public partial double HorizontalThresholdRatio { get; set; } = 0.5;
-
-    /// <summary>
-    /// 换行检测阈值比例
-    /// 作用: 控制合并文本时是否添加换行符
-    /// 计算: 阈值 = lastRect.Height* LineSpacingThresholdRatio
-    /// 调整建议:
-    ///     0.1-0.2: 严格换行，即使很小的距离也换行
-    ///     0.3-0.5: 标准换行，适合大多数文档
-    ///     0.8-1.0: 宽松换行，只有距离很大才换行
-    ///     >2.0: 几乎不换行，所有文本连在一起
-    [ObservableProperty] public partial double LineSpacingThresholdRatio { get; set; } = 0.3;
-
-    /// <summary>
-    /// 词间距检测阈值比例
-    /// 作用: 控制合并文本时是否添加空格
-    /// 计算: 阈值 = lastRect.Width* WordSpacingThresholdRatio
-    /// 调整建议:
-    ///     0.1-0.2: 标准空格间距
-    ///     0.3-0.5: 宽松空格间距
-    ///     >1.0: 几乎不添加空格
-    /// </summary>
-    [ObservableProperty] public partial double WordSpacingThresholdRatio { get; set; } = 0.2;
+    [JsonConverter(typeof(LayoutAnalysisModeJsonConverter))]
+    [ObservableProperty] public partial LayoutAnalysisMode LayoutAnalysisMode { get; set; } = LayoutAnalysisMode.Auto;
     #endregion
 
     #region OCR Settings
 
-    [ObservableProperty] public partial LangEnum OcrLanguage { get; set; } = LangEnum.Auto;
+    [ObservableProperty] public partial LangEnum OcrWindowOcrLanguage { get; set; } = LangEnum.Auto;
     [ObservableProperty] public partial bool IsOcrShowingAnnotated { get; set; } = false;
     [ObservableProperty] public partial bool IsOcrShowingTextControl { get; set; } = false;
     [ObservableProperty] public partial double OcrWindowWidth { get; set; } = 600;
@@ -334,10 +272,39 @@ public partial class Settings : ObservableObject
 
     #region Image Translate Settings
 
+    [ObservableProperty] public partial ImageTranslateWindowMode ImageTranslateWindowMode { get; set; } = ImageTranslateWindowMode.Standalone;
     [ObservableProperty] public partial bool IsImTranShowingAnnotated { get; set; } = false;
     [ObservableProperty] public partial bool IsImTranShowingTextControl { get; set; } = false;
+    [ObservableProperty] public partial LangEnum ImageTranslateOcrLanguage { get; set; } = LangEnum.Auto;
+    [ObservableProperty] public partial bool IsImageTranslateCompactOcrLanguageVisible { get; set; } = false;
     [ObservableProperty] public partial LangEnum ImageTranslateSourceLang { get; set; } = LangEnum.Auto;
     [ObservableProperty] public partial LangEnum ImageTranslateTargetLang { get; set; } = LangEnum.Auto;
+
+    /// <summary>
+    ///     图片翻译独立的语种识别引擎
+    /// </summary>
+    [ObservableProperty] public partial LanguageDetectorType ImageTranslateLanguageDetector { get; set; } = LanguageDetectorType.Local;
+
+    /// <summary>
+    ///     图片翻译独立的本地识别中英字符比例阈值
+    /// </summary>
+    [ObservableProperty] public partial double ImageTranslateLocalDetectorRate { get; set; } = 0.8;
+
+    /// <summary>
+    ///     图片翻译：原始语言识别为自动且在线识别出错时使用的源语种
+    /// </summary>
+    [ObservableProperty] public partial LangEnum ImageTranslateSourceLangIfAuto { get; set; } = LangEnum.English;
+
+    /// <summary>
+    ///     图片翻译 Auto 目标解析：第一语言
+    /// </summary>
+    [ObservableProperty] public partial LangEnum ImageTranslateFirstLanguage { get; set; } = LangEnum.ChineseSimplified;
+
+    /// <summary>
+    ///     图片翻译 Auto 目标解析：第二语言
+    /// </summary>
+    [ObservableProperty] public partial LangEnum ImageTranslateSecondLanguage { get; set; } = LangEnum.English;
+
     [ObservableProperty] public partial double ImTranWindowWidth { get; set; } = 600;
     [ObservableProperty] public partial double ImTranWindowHeight { get; set; } = 600;
 
@@ -458,11 +425,11 @@ public partial class Settings : ObservableObject
         if (IsOcrVisible) migratedActions.Add(MainHeaderActions.Ocr);
         if (IsImageTranslateVisible) migratedActions.Add(MainHeaderActions.ImageTranslate);
         if (IsScreenshotTranslateVisible) migratedActions.Add(MainHeaderActions.ScreenshotTranslate);
-        if (IsMouseHookVisible) migratedActions.Add(MainHeaderActions.MouseHook);
+        if (IsMouseSelectionTranslationVisible) migratedActions.Add(MainHeaderActions.MouseSelectionTranslation);
         if (IsColorSchemeVisible) migratedActions.Add(MainHeaderActions.ColorScheme);
         if (IsHideInputVisible) migratedActions.Add(MainHeaderActions.HideInput);
-        if (IsHistoryNavigationVisible) migratedActions.Add(MainHeaderActions.HistoryNavigation);
         if (IsServiceSwitcherVisible) migratedActions.Add(MainHeaderActions.ServiceSwitcher);
+        if (IsHistoryNavigationVisible) migratedActions.Add(MainHeaderActions.HistoryNavigation);
 
         ApplyMainHeaderVisibleActions(migratedActions);
     }
@@ -485,6 +452,7 @@ public partial class Settings : ObservableObject
             throw new InvalidOperationException("Storage is not set. Please call SetStorage() before Initialize().");
         }
 
+        NormalizeLayoutAnalysisMode();
         EnsureMainHeaderVisibleActionsInitialized();
 
         ApplyLogLevel();
@@ -501,6 +469,7 @@ public partial class Settings : ObservableObject
         ApplyTheme();
         ApplyDeactived();
         ApplyExternalCall();
+        ApplyMouseSelectionFeatures();
     }
 
     internal ImageFormat GetImageFormat() =>
@@ -521,6 +490,12 @@ public partial class Settings : ObservableObject
             ImageQuality.High => new BmpBitmapEncoder(),
             _ => new PngBitmapEncoder(),
         };
+    }
+
+    internal void NormalizeLayoutAnalysisMode()
+    {
+        if (LayoutAnalysisMode is not (LayoutAnalysisMode.Auto or LayoutAnalysisMode.Provider or LayoutAnalysisMode.Smart or LayoutAnalysisMode.NoMerge))
+            LayoutAnalysisMode = LayoutAnalysisMode.Auto;
     }
 
     #endregion
@@ -572,8 +547,15 @@ public partial class Settings : ObservableObject
             case nameof(IgnoreHotkeysOnFullscreen):
                 Ioc.Default.GetRequiredService<HotkeySettings>().ApplyIgnoreOnFullScreen();
                 break;
+            case nameof(IsMouseSelectionTranslationEnabled):
+            case nameof(IsMouseSelectionIconEnabled):
+                ApplyMouseSelectionFeatures();
+                break;
             case nameof(LocalDetectorRate):
                 LocalDetectorRate = Math.Round(LocalDetectorRate, 2);
+                break;
+            case nameof(ImageTranslateLocalDetectorRate):
+                ImageTranslateLocalDetectorRate = Math.Round(ImageTranslateLocalDetectorRate, 2);
                 break;
             default:
                 break;
@@ -589,11 +571,11 @@ public partial class Settings : ObservableObject
         IsOcrVisible = actionSet.Contains(MainHeaderActions.Ocr);
         IsImageTranslateVisible = actionSet.Contains(MainHeaderActions.ImageTranslate);
         IsScreenshotTranslateVisible = actionSet.Contains(MainHeaderActions.ScreenshotTranslate);
-        IsMouseHookVisible = actionSet.Contains(MainHeaderActions.MouseHook);
+        IsMouseSelectionTranslationVisible = actionSet.Contains(MainHeaderActions.MouseSelectionTranslation);
         IsColorSchemeVisible = actionSet.Contains(MainHeaderActions.ColorScheme);
         IsHideInputVisible = actionSet.Contains(MainHeaderActions.HideInput);
-        IsHistoryNavigationVisible = actionSet.Contains(MainHeaderActions.HistoryNavigation);
         IsServiceSwitcherVisible = actionSet.Contains(MainHeaderActions.ServiceSwitcher);
+        IsHistoryNavigationVisible = actionSet.Contains(MainHeaderActions.HistoryNavigation);
     }
 
     #endregion
@@ -735,6 +717,31 @@ public partial class Settings : ObservableObject
         }
     }
 
+    private bool _isApplyingMouseSelectionFeatures;
+
+    private void ApplyMouseSelectionFeatures()
+    {
+        if (_isApplyingMouseSelectionFeatures)
+            return;
+
+        var mouseSelectionService = Ioc.Default.GetRequiredService<MouseSelectionService>();
+        if (mouseSelectionService.ApplyPersistentFeatures(
+                IsMouseSelectionTranslationEnabled,
+                IsMouseSelectionIconEnabled))
+            return;
+
+        try
+        {
+            _isApplyingMouseSelectionFeatures = true;
+            IsMouseSelectionTranslationEnabled = false;
+            IsMouseSelectionIconEnabled = false;
+        }
+        finally
+        {
+            _isApplyingMouseSelectionFeatures = false;
+        }
+    }
+
     #endregion
 }
 
@@ -784,7 +791,7 @@ public enum TextSeparatorHandleType
 public enum TextSeparatorHandleScope
 {
     None = 0,
-    MouseHook = 1,
+    MouseSelection = 1,
     Crossword = 2,
     Incremental = 4,
     ClipboardMonitor = 8,
@@ -793,7 +800,7 @@ public enum TextSeparatorHandleScope
 }
 
 /// <summary>
-/// 划词取词失败时，主窗口的回退行为。
+/// 划词取词失败时的回退行为。
 /// </summary>
 public enum CrosswordFetchFailedFallbackTarget
 {
@@ -806,16 +813,25 @@ public enum CrosswordFetchFailedFallbackTarget
     /// 仅显示主窗口，保留当前输入与输出内容。
     /// </summary>
     ShowWindow,
+
+    /// <summary>
+    /// 仅发送托盘通知，不显示主窗口。
+    /// </summary>
+    NotifyOnly,
 }
 
 public enum LayoutAnalysisMode
 {
-    MergeAll,
-    StrictParagraph,
-    StandardDocument,
-    ColumnDocument,
+    Auto,
+    Provider,
+    Smart,
     NoMerge,
-    UserDefined,
+}
+
+public enum ImageTranslateWindowMode
+{
+    Standalone,
+    Compact,
 }
 
 public enum WindowScreenType
@@ -876,7 +892,7 @@ public enum DoubleClickTrayFunction
     ScreenshotTranslate,
     OCR,
     OpenSettingsWindow,
-    ToggleMouseHook,
+    ToggleMouseSelectionTranslation,
     ToggleGlobalHotkeys,
     Exit
 }

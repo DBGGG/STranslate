@@ -104,6 +104,19 @@ public class ImageZoom : Control
         DependencyProperty.Register(nameof(Source), typeof(ImageSource), typeof(ImageZoom),
             new FrameworkPropertyMetadata(null, OnSourceChanged));
 
+    public ImageTranslateOverlayDocument? OverlayDocument
+    {
+        get => (ImageTranslateOverlayDocument?)GetValue(OverlayDocumentProperty);
+        set => SetValue(OverlayDocumentProperty, value);
+    }
+
+    public static readonly DependencyProperty OverlayDocumentProperty =
+        DependencyProperty.Register(
+            nameof(OverlayDocument),
+            typeof(ImageTranslateOverlayDocument),
+            typeof(ImageZoom),
+            new FrameworkPropertyMetadata(null));
+
     private static void OnSourceChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         var control = (ImageZoom)d;
@@ -276,6 +289,16 @@ public class ImageZoom : Control
         DependencyProperty.Register(nameof(DisableDoubleClickReset), typeof(bool), typeof(ImageZoom),
             new FrameworkPropertyMetadata(false));
 
+    public bool IsPanAndZoomEnabled
+    {
+        get => (bool)GetValue(IsPanAndZoomEnabledProperty);
+        set => SetValue(IsPanAndZoomEnabledProperty, value);
+    }
+
+    public static readonly DependencyProperty IsPanAndZoomEnabledProperty =
+        DependencyProperty.Register(nameof(IsPanAndZoomEnabled), typeof(bool), typeof(ImageZoom),
+            new FrameworkPropertyMetadata(true));
+
     public Cursor MoveCursor
     {
         get => (Cursor)GetValue(MoveCursorProperty);
@@ -303,6 +326,8 @@ public class ImageZoom : Control
     private static void OnOcrWordsChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         var control = (ImageZoom)d;
+        // 数据源切换后旧选择索引失效。
+        control.ResetSelection();
         control._fullTextCache = null; // 清除缓存
         control.UpdateSelectedText(); // 更新选中文本
     }
@@ -336,15 +361,21 @@ public class ImageZoom : Control
 
     private void UnsubscribeEvents()
     {
-        if (_imageContainer == null) return;
+        if (_imageContainer != null)
+        {
+            _imageContainer.MouseDown -= OnMouseDown;
+            _imageContainer.MouseMove -= OnMouseMove;
+            _imageContainer.MouseUp -= OnMouseUp;
+            _imageContainer.LostMouseCapture -= OnLostMouseCapture;
+            _imageContainer.MouseWheel -= OnMouseWheel;
+            _imageContainer.ManipulationStarting -= OnManipulationStarting;
+            _imageContainer.ManipulationDelta -= OnManipulationDelta;
+        }
 
-        _imageContainer.MouseDown -= OnMouseDown;
-        _imageContainer.MouseMove -= OnMouseMove;
-        _imageContainer.MouseUp -= OnMouseUp;
-        _imageContainer.LostMouseCapture -= OnLostMouseCapture;
-        _imageContainer.MouseWheel -= OnMouseWheel;
-        _imageContainer.ManipulationStarting -= OnManipulationStarting;
-        _imageContainer.ManipulationDelta -= OnManipulationDelta;
+        if (_interactionCanvas != null)
+        {
+            _interactionCanvas.LostMouseCapture -= OnLostMouseCapture;
+        }
     }
 
     private void GetTemplateParts()
@@ -360,15 +391,21 @@ public class ImageZoom : Control
 
     private void SubscribeEvents()
     {
-        if (_imageContainer == null) return;
+        if (_imageContainer != null)
+        {
+            _imageContainer.MouseDown += OnMouseDown;
+            _imageContainer.MouseMove += OnMouseMove;
+            _imageContainer.MouseUp += OnMouseUp;
+            _imageContainer.LostMouseCapture += OnLostMouseCapture;
+            _imageContainer.MouseWheel += OnMouseWheel;
+            _imageContainer.ManipulationStarting += OnManipulationStarting;
+            _imageContainer.ManipulationDelta += OnManipulationDelta;
+        }
 
-        _imageContainer.MouseDown += OnMouseDown;
-        _imageContainer.MouseMove += OnMouseMove;
-        _imageContainer.MouseUp += OnMouseUp;
-        _imageContainer.LostMouseCapture += OnLostMouseCapture;
-        _imageContainer.MouseWheel += OnMouseWheel;
-        _imageContainer.ManipulationStarting += OnManipulationStarting;
-        _imageContainer.ManipulationDelta += OnManipulationDelta;
+        if (_interactionCanvas != null)
+        {
+            _interactionCanvas.LostMouseCapture += OnLostMouseCapture;
+        }
     }
 
     #endregion
@@ -384,6 +421,12 @@ public class ImageZoom : Control
 
         if (HandleTextSelectionMouseDown(e))
             return;
+
+        if (!IsPanAndZoomEnabled)
+        {
+            e.Handled = true;
+            return;
+        }
 
         if (HandleDoubleClick(e))
             return;
@@ -424,12 +467,19 @@ public class ImageZoom : Control
 
     private void OnLostMouseCapture(object sender, MouseEventArgs e)
     {
+        StopTextSelection();
         StopDragging();
         e.Handled = true;
     }
 
     private void OnMouseWheel(object sender, MouseWheelEventArgs e)
     {
+        if (!IsPanAndZoomEnabled)
+        {
+            e.Handled = true;
+            return;
+        }
+
         var isZoomIn = e.Delta > 0;
 
         if (TryZoomAtMousePosition(e, isZoomIn))
@@ -471,13 +521,21 @@ public class ImageZoom : Control
 
     private bool HandleTextSelectionMouseDown(MouseButtonEventArgs e)
     {
+        UpdateMouseOverTextState(e);
+
         if (!_isMouseOverText)
             return false;
+
+        var mousePos = e.GetPosition(_interactionCanvas);
+        if (e.ClickCount == 2 && SelectVisualLineAtPoint(mousePos))
+        {
+            e.Handled = true;
+            return true;
+        }
 
         ResetSelection();
         _isSelecting = true;
 
-        var mousePos = e.GetPosition(_interactionCanvas);
         _interactionCanvas?.CaptureMouse();
         _selectionStartIndex = GetCharacterIndexAtPoint(mousePos);
 
@@ -518,18 +576,88 @@ public class ImageZoom : Control
         }
     }
 
-    private bool IsPointOverAnyWord(Point point)
+    private bool IsPointOverAnyWord(Point point) => FindWordAtPoint(point) != null;
+
+    /// <summary>
+    /// 判断 ImageZoom 坐标是否位于可选文字上。
+    /// </summary>
+    public bool IsPointOverSelectableText(Point pointRelativeToControl)
     {
-        if (OcrWords == null || OcrWords.Count == 0)
+        if (_interactionCanvas == null || OcrWords == null || OcrWords.Count == 0)
             return false;
 
-        foreach (var word in OcrWords)
+        var pointOnCanvas = TranslatePoint(pointRelativeToControl, _interactionCanvas);
+        return IsPointOverAnyWord(pointOnCanvas);
+    }
+
+    /// <summary>
+    /// 清除当前文字选择。
+    /// </summary>
+    public void ClearTextSelection() => ResetSelection();
+
+    internal bool IsPointOverTextSelection(Point point)
+    {
+        if (_interactionCanvas == null || _selectionStartIndex == null || _selectionEndIndex == null)
+            return false;
+        var word = FindWordAtPoint(TranslatePoint(point, _interactionCanvas));
+        return word != null && IsWordInSelection(word,
+            Math.Min(_selectionStartIndex.Value, _selectionEndIndex.Value),
+            Math.Max(_selectionStartIndex.Value, _selectionEndIndex.Value));
+    }
+
+    // Pinned 在 Preview 事件中调用；其他 ImageZoom 保留原有的双击选行行为。
+    internal void SelectTextAtPoint(Point point, bool selectParagraph)
+    {
+        if (_interactionCanvas == null)
+            return;
+        var canvasPoint = TranslatePoint(point, _interactionCanvas);
+        var word = FindWordAtPoint(canvasPoint);
+        if (word == null)
+            return;
+        if (selectParagraph)
         {
-            if (word.BoundingBox.Contains(point))
-                return true;
+            if (OcrWordSelection.TryGetParagraphRange(OcrWords, word, out var paragraphStart, out var paragraphEnd))
+            {
+                _isSelecting = false;
+                _selectionStartIndex = paragraphStart;
+                _selectionEndIndex = paragraphEnd;
+                UpdateSelectionHighlight();
+            }
+            return;
+        }
+        if (OcrWordSelection.TryGetWordRange(GetFullText(), CalculateCharacterIndexInWord(word, canvasPoint),
+                out var start, out var end))
+        {
+            // 软换行不应截断单词，但独立段落的文字不能合成一个词。
+            if (OcrWordSelection.TryGetParagraphRange(OcrWords, word, out var lineStart, out var lineEnd))
+            {
+                start = Math.Max(start, lineStart);
+                end = Math.Min(end, lineEnd);
+            }
+            _isSelecting = false;
+            _selectionStartIndex = start;
+            _selectionEndIndex = end;
+            UpdateSelectionHighlight();
+        }
+    }
+
+    private bool SelectVisualLineAtPoint(Point point)
+    {
+        var anchorWord = FindWordAtPoint(point);
+        if (!OcrWordSelection.TryGetVisualLineRange(
+                OcrWords,
+                anchorWord,
+                out var selectionStartIndex,
+                out var selectionEndIndex))
+        {
+            return false;
         }
 
-        return false;
+        _isSelecting = false;
+        _selectionStartIndex = selectionStartIndex;
+        _selectionEndIndex = selectionEndIndex;
+        UpdateSelectionHighlight();
+        return true;
     }
 
     private void StopTextSelection()
@@ -544,7 +672,7 @@ public class ImageZoom : Control
 
     private bool HandleDoubleClick(MouseButtonEventArgs e)
     {
-        if (!DisableDoubleClickReset && e.ClickCount == 2)
+        if (IsPanAndZoomEnabled && !DisableDoubleClickReset && e.ClickCount == 2)
         {
             Reset();
             e.Handled = true;
@@ -555,6 +683,9 @@ public class ImageZoom : Control
 
     private void StartDragging(MouseButtonEventArgs e)
     {
+        if (!IsPanAndZoomEnabled)
+            return;
+
         _lastMousePosition = e.GetPosition(_imageContainer);
         _imageContainer?.CaptureMouse();
         _imageContainer?.Cursor = MoveCursor;
@@ -699,6 +830,13 @@ public class ImageZoom : Control
         if (transform == null || property == null)
             return;
 
+        if (DisableAnimation)
+        {
+            transform.BeginAnimation(property, null);
+            transform.SetCurrentValue(property, targetValue);
+            return;
+        }
+
         var duration = useAnimation && !DisableAnimation
             ? TimeSpan.FromMilliseconds(AnimationDurationMs)
             : TimeSpan.Zero;
@@ -713,7 +851,7 @@ public class ImageZoom : Control
 
     private void AnimateZoomHint()
     {
-        if (_scaleTextBorder == null)
+        if (_scaleTextBorder == null || AlwaysHideZoomValueHint || DisableAnimation)
             return;
 
         var duration = TimeSpan.FromMilliseconds(ZoomValueHintAnimationDurationMs);
@@ -840,12 +978,22 @@ public class ImageZoom : Control
 
         _highlightBrush ??= new SolidColorBrush(Colors.DodgerBlue) { Opacity = HighlightOpacity };
 
+        var highlightGeometry = new GeometryGroup();
         foreach (var word in OcrWords)
         {
-            if (IsWordInSelection(word, selectionStart, selectionEnd))
+            if (IsWordInSelection(word, selectionStart, selectionEnd) && IsSelectableWord(word))
             {
-                AddHighlightRectangle(word);
+                highlightGeometry.Children.Add(new RectangleGeometry(word.BoundingBox));
             }
+        }
+
+        if (highlightGeometry.Children.Count > 0)
+        {
+            _interactionCanvas.Children.Add(new Path
+            {
+                Fill = _highlightBrush,
+                Data = highlightGeometry
+            });
         }
 
         UpdateSelectedText();
@@ -856,19 +1004,6 @@ public class ImageZoom : Control
         var wordStart = word.StartIndexInFullText;
         var wordEnd = word.StartIndexInFullText + word.Text.Length - 1;
         return wordStart <= selectionEnd && wordEnd >= selectionStart;
-    }
-
-    private void AddHighlightRectangle(OcrWord word)
-    {
-        var rect = new Rectangle
-        {
-            Width = word.BoundingBox.Width,
-            Height = word.BoundingBox.Height,
-            Fill = _highlightBrush
-        };
-        Canvas.SetLeft(rect, word.BoundingBox.Left);
-        Canvas.SetTop(rect, word.BoundingBox.Top);
-        _interactionCanvas!.Children.Add(rect);
     }
 
     private void UpdateSelectedText()
@@ -900,17 +1035,9 @@ public class ImageZoom : Control
 
     private int? GetCharacterIndexAtPoint(Point point)
     {
-        if (OcrWords == null || OcrWords.Count == 0)
-            return null;
-
-        // Try to find word containing the point
-        foreach (var word in OcrWords)
-        {
-            if (word.BoundingBox.Contains(point))
-            {
-                return CalculateCharacterIndexInWord(word, point);
-            }
-        }
+        var wordAtPoint = FindWordAtPoint(point);
+        if (wordAtPoint != null)
+            return CalculateCharacterIndexInWord(wordAtPoint, point);
 
         // Find nearest word
         var nearestWord = FindNearestWord(point);
@@ -918,6 +1045,20 @@ public class ImageZoom : Control
             return 0;
 
         return CalculateCharacterIndexNearWord(nearestWord, point);
+    }
+
+    private OcrWord? FindWordAtPoint(Point point)
+    {
+        if (OcrWords == null || OcrWords.Count == 0)
+            return null;
+
+        foreach (var word in OcrWords)
+        {
+            if (IsSelectableWord(word) && word.BoundingBox.Contains(point))
+                return word;
+        }
+
+        return null;
     }
 
     private int CalculateCharacterIndexInWord(OcrWord word, Point point)
@@ -935,6 +1076,9 @@ public class ImageZoom : Control
 
         foreach (var word in OcrWords!)
         {
+            if (!IsSelectableWord(word))
+                continue;
+
             var distance = GetDistanceToRect(point, word.BoundingBox);
             if (distance < minDistance)
             {
@@ -984,9 +1128,6 @@ public class ImageZoom : Control
 
     private void ResetSelection()
     {
-        if (OcrWords == null || OcrWords.Count == 0)
-            return;
-
         _isSelecting = false;
         _selectionStartIndex = null;
         _selectionEndIndex = null;
@@ -1006,7 +1147,7 @@ public class ImageZoom : Control
         UpdateSelectionHighlight();
     }
 
-    private string GetFullText()
+    internal string GetFullText()
     {
         if (_fullTextCache != null)
             return _fullTextCache;
@@ -1023,6 +1164,9 @@ public class ImageZoom : Control
     #region Utility Methods
 
     private static bool IsPrimaryButton(MouseButtonEventArgs e) => e.ChangedButton == MouseButton.Left;
+
+    private static bool IsSelectableWord(OcrWord word) =>
+        !word.BoundingBox.IsEmpty && word.BoundingBox.Width > 0 && word.BoundingBox.Height > 0;
 
     private static double Clamp(double value, double min, double max)
     {

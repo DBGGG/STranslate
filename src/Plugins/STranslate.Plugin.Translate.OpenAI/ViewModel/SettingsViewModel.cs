@@ -20,11 +20,13 @@ public partial class SettingsViewModel : ObservableObject, IDisposable
         _settings = settings;
         Main = main;
 
+        ApiMode = _settings.ApiMode;
         Url = _settings.Url;
         ApiKey = _settings.ApiKey;
         Model = _settings.Model;
         Models = new ObservableCollection<string>(_settings.Models);
         Temperature = _settings.Temperature;
+        AdditionalParametersJson = _settings.AdditionalParametersJson;
 
         PropertyChanged += OnPropertyChanged;
         Models.CollectionChanged += OnModelsCollectionChanged;
@@ -45,6 +47,9 @@ public partial class SettingsViewModel : ObservableObject, IDisposable
     {
         switch (e.PropertyName)
         {
+            case nameof(ApiMode):
+                _settings.ApiMode = ApiMode;
+                break;
             case nameof(ApiKey):
                 _settings.ApiKey = ApiKey;
                 break;
@@ -58,6 +63,9 @@ public partial class SettingsViewModel : ObservableObject, IDisposable
                 // 舍入到一位小数，避免浮点精度问题
                 _settings.Temperature = Math.Round(Temperature, 1);
                 break;
+            case nameof(AdditionalParametersJson):
+                _settings.AdditionalParametersJson = AdditionalParametersJson;
+                break;
             default:
                 return;
         }
@@ -65,11 +73,19 @@ public partial class SettingsViewModel : ObservableObject, IDisposable
     }
 
     [ObservableProperty] public partial string ValidateResult { get; set; } = string.Empty;
+    [ObservableProperty] public partial OpenAIApiMode ApiMode { get; set; }
     [ObservableProperty] public partial string Url { get; set; }
     [ObservableProperty] public partial string ApiKey { get; set; }
     [ObservableProperty] public partial string? Model { get; set; }
     [ObservableProperty] public partial ObservableCollection<string> Models { get; set; }
     [ObservableProperty] public partial double Temperature { get; set; }
+    [ObservableProperty] public partial string AdditionalParametersJson { get; set; }
+
+    public string FinalUrl => OpenAIProtocol.BuildFinalUrl(Url, ApiMode);
+
+    partial void OnApiModeChanged(OpenAIApiMode value) => OnPropertyChanged(nameof(FinalUrl));
+
+    partial void OnUrlChanged(string value) => OnPropertyChanged(nameof(FinalUrl));
 
     [RelayCommand]
     private void AddModel(string model)
@@ -118,37 +134,7 @@ public partial class SettingsViewModel : ObservableObject, IDisposable
     {
         try
         {
-            var url = UrlHelper.BuildFinalUrl(_settings.Url);
-
-            // 选择模型
-            var model = _settings.Model.Trim();
-            model = string.IsNullOrEmpty(model) ? "gpt-4o" : model;
-
-            // 替换Prompt关键字
-            var prompt = (Main.Prompts.FirstOrDefault(x => x.IsEnabled) ?? throw new Exception("请先完善Prompt配置"));
-            var messages = prompt.Clone().Items;
-            foreach (var item in messages)
-            {
-                item.Content = item.Content
-                    .Replace("$source", "en-US")
-                    .Replace("$target", "zh-CN")
-                    .Replace("$content", "Hello world");
-            }
-
-            // 温度限定
-            var temperature = Math.Clamp(_settings.Temperature, 0, 2);
-
-            var content = new { model, messages, temperature, stream = true };
-
-            var option = new Options
-            {
-                Headers = new Dictionary<string, string>
-                {
-                    { "Authorization", "Bearer " + _settings.ApiKey }
-                }
-            };
-
-            await _context.HttpService.StreamPostAsync(url, content, (x) => { }, option);
+            await Main.ValidateApiAsync();
 
             ValidateResult = _context.GetTranslation("ValidationSuccess");
         }

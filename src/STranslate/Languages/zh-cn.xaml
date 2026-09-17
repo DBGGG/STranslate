@@ -29,6 +29,7 @@
     <sys:String x:Key="TimeoutPlaceholder">超时时间（秒）</sys:String>
     <sys:String x:Key="SearchFunction">搜索功能</sys:String>
     <sys:String x:Key="SearchFunctionToolTip">按 Ctrl+F 搜索功能</sys:String>
+    <sys:String x:Key="NoResultsFound">未找到结果</sys:String>
     <sys:String x:Key="Function">功能</sys:String>
     <sys:String x:Key="Appearance">外观</sys:String>
     <sys:String x:Key="AutoTranslateEnabled">启用自动翻译</sys:String>
@@ -53,9 +54,9 @@
     <sys:String x:Key="General_DefaultSourceLanguage">默认源语言</sys:String>
     <sys:String x:Key="General_DefaultSourceLanguageDescription">当自动检测失败时使用此语言。</sys:String>
     <sys:String x:Key="General_FirstLanguage">第一语言</sys:String>
-    <sys:String x:Key="General_FirstLanguageDescription">当任意翻译场景（包括图片翻译）的目标语言设为自动，且源语言为其他语言（包含第二语言）时，目标语言使用第一语言。</sys:String>
+    <sys:String x:Key="General_FirstLanguageDescription">当任意翻译场景的目标语言设为自动，且源语言为其他语言（包含第二语言）时，目标语言使用第一语言。</sys:String>
     <sys:String x:Key="General_SecondLanguage">第二语言</sys:String>
-    <sys:String x:Key="General_SecondLanguageDescription">当任意翻译场景（包括图片翻译）的目标语言设为自动，且源语言为第一语言时，目标语言使用第二语言。</sys:String>
+    <sys:String x:Key="General_SecondLanguageDescription">当任意翻译场景的目标语言设为自动，且源语言为第一语言时，目标语言使用第二语言。</sys:String>
     <sys:String x:Key="General_HttpTimeout">超时时间</sys:String>
     <sys:String x:Key="General_HttpTimeoutDescription">请求网络请求的超时时间，单位：秒。</sys:String>
     <sys:String x:Key="General_UseClipboardOutput">文本输出使用剪贴板</sys:String>
@@ -69,6 +70,8 @@
     <sys:String x:Key="General_AutoTranslateButtonVisible">在主界面上显示自动翻译按钮</sys:String>
     <sys:String x:Key="General_AutoTranslateOnPromptChanged">切换提示词后自动翻译</sys:String>
     <sys:String x:Key="General_AutoTranslateOnPromptChangedDescription">切换AI翻译服务的提示词后，立即重新执行翻译。</sys:String>
+    <sys:String x:Key="General_IncrementalClearInput">增量翻译时清空输入</sys:String>
+    <sys:String x:Key="General_IncrementalClearInputDescription">开启后（默认）触发增量翻译时清空输入框，本次会话内选中文本仍累积追加；关闭后保留旧逻辑，不清空原有内容，直接追加。</sys:String>
     <sys:String x:Key="General_AutoTranslateDelay">自动翻译延时</sys:String>
     <sys:String x:Key="General_AutoTranslateDelayDescription">输入内容等待时间，单位：毫秒。</sys:String>
     <sys:String x:Key="General_LineBreakHandleType">取词换行处理</sys:String>
@@ -81,7 +84,7 @@
     <sys:String x:Key="General_SelectedTextFetchTimeoutDescription">模拟复制后轮询剪贴板新文本的超时时间，单位：毫秒。写入成功会立即返回；部分 PDF 软件写入较慢时可适当调高。</sys:String>
     <sys:String x:Key="General_SelectedTextFetchTimeoutPlaceholder">500</sys:String>
     <sys:String x:Key="General_CrosswordFetchFailedFallbackTarget">划词取词失败回退目标</sys:String>
-    <sys:String x:Key="General_CrosswordFetchFailedFallbackTargetDescription">划词取词失败后，选择回退到输入翻译或仅显示主界面。</sys:String>
+    <sys:String x:Key="General_CrosswordFetchFailedFallbackTargetDescription">划词取词失败后，选择输入翻译、显示主界面或仅发送托盘通知。</sys:String>
     <sys:String x:Key="General_ImageQuality">图片质量</sys:String>
     <sys:String x:Key="General_ImageQualityDescription">处理图片时质量调整，在线OCR服务可能会限制图片大小</sys:String>
     <sys:String x:Key="General_DoubleClickTrayFunction">双击托盘程序功能</sys:String>
@@ -108,8 +111,14 @@
     <sys:String x:Key="General_HideInputBoxButtonVisible">主界面显示隐藏输入框按钮</sys:String>
     <sys:String x:Key="General_HideLanguageControl">隐藏语言选择控件</sys:String>
     <sys:String x:Key="General_HideLanguageControlDescription">隐藏输入框时是否一并隐藏语言选择控件。</sys:String>
-    <sys:String x:Key="General_ShowMouseHook">显示鼠标钩子</sys:String>
-    <sys:String x:Key="General_ShowMouseHookDescription">主界面是否显示快捷启用/禁用监听鼠标划词图标。</sys:String>
+    <sys:String x:Key="General_ShowMouseSelectionTranslation">显示鼠标划词直接翻译</sys:String>
+    <sys:String x:Key="General_ShowMouseSelectionTranslationDescription">主界面是否显示鼠标划词直接翻译的快捷开关。</sys:String>
+    <sys:String x:Key="General_EnableMouseSelectionTranslation">鼠标划词直接翻译</sys:String>
+    <sys:String x:Key="General_EnableMouseSelectionTranslationDescription">拖动或双击选中文本后立即复制并触发翻译。</sys:String>
+    <sys:String x:Key="General_EnableMouseSelectionIcon">划词后悬浮图标</sys:String>
+    <sys:String x:Key="General_EnableMouseSelectionIconDescription">拖动或双击选中文本后显示悬浮图标，点击图标时再翻译；直接翻译同时开启时优先直接翻译。</sys:String>
+    <sys:String x:Key="MouseSelectionIconTranslate">点击翻译</sys:String>
+    <sys:String x:Key="MouseSelectionTranslationRequiresTopmost">鼠标划词直接翻译启用时窗口必须保持置顶。</sys:String>
     <sys:String x:Key="General_ShowHistoryNavigation">显示历史导航</sys:String>
     <sys:String x:Key="General_ShowHistoryNavigationDescription">主界面是否显示向前/向后历史翻译记录导航图标。</sys:String>
     <sys:String x:Key="General_ShowOcrButton">显示OCR按钮</sys:String>
@@ -173,8 +182,9 @@
     <sys:String x:Key="Hotkey_CrosswordTranslateByCtrlSameCDescription">鼠标选中文本快速按下 Ctrl+C+C 进行取词翻译。</sys:String>
     <sys:String x:Key="CrosswordTranslateFetchFailed">划词取词失败，已打开输入翻译</sys:String>
     <sys:String x:Key="CrosswordTranslateFetchFailedShowWindow">划词取词失败，已打开主界面显示</sys:String>
-    <sys:String x:Key="Hotkey_MouseHookTranslate">监听鼠标划词</sys:String>
-    <sys:String x:Key="Hotkey_MouseHookTranslateDescription">开启/关闭监听鼠标划词选中文本触发翻译的快捷键。</sys:String>
+    <sys:String x:Key="CrosswordTranslateFetchFailedNotifyOnly">划词取词失败，请选中文本后重试。</sys:String>
+    <sys:String x:Key="Hotkey_MouseSelectionTranslation">鼠标划词直接翻译</sys:String>
+    <sys:String x:Key="Hotkey_MouseSelectionTranslationDescription">开启或关闭鼠标划词直接翻译。</sys:String>
     <sys:String x:Key="Hotkey_ReplaceTranslate">替换翻译</sys:String>
     <sys:String x:Key="Hotkey_ReplaceTranslateDescription">鼠标选中文本触发翻译并替换原文本的快捷键。</sys:String>
     <sys:String x:Key="Hotkey_ScreenshotTranslate">截图翻译</sys:String>
@@ -210,6 +220,7 @@
     <sys:String x:Key="Hotkey_OcrImTransWindow">OCR | 图片翻译窗口快捷键</sys:String>
     <sys:String x:Key="Hotkey_ReExecuteOcr">重新执行文本识别 | 图片翻译</sys:String>
     <sys:String x:Key="Hotkey_SwitchImage">切换渲染图/标注图</sys:String>
+    <sys:String x:Key="Hotkey_PinImageTranslate">贴图（精简图片翻译窗口）</sys:String>
     <sys:String x:Key="Hotkey_QrCode">识别二维码</sys:String>
     <sys:String x:Key="Hotkey_QrCodeDescription">该热键仅支持OCR窗口</sys:String>
     <sys:String x:Key="Hotkey_IncrementalTranslate">增量翻译</sys:String>
@@ -308,26 +319,40 @@
     <sys:String x:Key="Network_HelpBypassListContent" xml:space="preserve">使用分号(;)分隔多个地址，支持通配符(*)：&#10;localhost;127.*;10.*;192.168.*;*.example.com</sys:String>
     <sys:String x:Key="Network_HelpEffectiveness">生效说明</sys:String>
     <sys:String x:Key="Network_HelpEffectivenessContent" xml:space="preserve">修改代理配置需等待 2 分钟后生效&#10;立即生效需重启</sys:String>
+    <sys:String x:Key="ProxyTesting">正在测试连接...</sys:String>
+    <sys:String x:Key="ProxyTestSuccess">连接成功！当前IP信息：{0}</sys:String>
+    <sys:String x:Key="ProxyTestFailed">连接失败，请检查代理设置</sys:String>
+    <sys:String x:Key="ProxyTestError">测试失败：{0}</sys:String>
+    <sys:String x:Key="ExternalCallStartFailed">启动服务失败请重新配置端口: {0}</sys:String>
 
     <!--  Standalone Page  -->
     <sys:String x:Key="Standalone_OcrShowAnnotationHeader">显示文本检测结果</sys:String>
     <sys:String x:Key="Standalone_OcrShowAnnotationDescription">切换原图/文本检测图显示</sys:String>
     <sys:String x:Key="Standalone_OcrShowTextControlHeader">显示文本框</sys:String>
     <sys:String x:Key="Standalone_OcrShowTextControlDescription">显示/隐藏右侧文本框</sys:String>
+    <sys:String x:Key="Standalone_OcrLanguageHeader">OCR 窗口识别语言</sys:String>
+    <sys:String x:Key="Standalone_OcrLanguageDescription">独立文本识别窗口使用的 OCR 识别语言。</sys:String>
     <sys:String x:Key="Standalone_ImTranShowAnnotatedHeader">显示文本检测结果</sys:String>
     <sys:String x:Key="Standalone_ImTranShowAnnotatedDescription">切换翻译结果/文本检测图显示</sys:String>
     <sys:String x:Key="Standalone_ImTranShowTextControlHeader">显示文本框</sys:String>
     <sys:String x:Key="Standalone_ImTranShowTextControlDescription">显示/隐藏右侧文本框</sys:String>
-    <sys:String x:Key="Standalone_LayoutAnalysisHeader">版面分析设置</sys:String>
-    <sys:String x:Key="Standalone_LayoutAnalysisDescription">对识别结果进行合并配置</sys:String>
-    <sys:String x:Key="Standalone_VerticalThresholdHeader">垂直相邻检测阈值比例</sys:String>
-    <sys:String x:Key="Standalone_VerticalThresholdDescription" xml:space="preserve">控制上下相邻文本块的合并敏感度&#10;0.1-0.3: 严格模式，只合并非常接近的行&#10;0.5-0.8: 标准模式，合并段落内的行&#10;1.0-3.0: 宽松模式，合并距离较远的文本块&#10;&gt;5.0: 几乎合并所有垂直分布的文本</sys:String>
-    <sys:String x:Key="Standalone_HorizontalThresholdHeader">水平相邻检测阈值比例</sys:String>
-    <sys:String x:Key="Standalone_HorizontalThresholdDescription" xml:space="preserve">控制左右相邻文本块的合并敏感度&#10;0.1-0.3: 严格模式，只合并非常接近的词&#10;0.5-0.8: 标准模式，合并同行内的词组&#10;1.0-2.0: 宽松模式，合并分栏文本&#10;&gt;5.0: 几乎合并所有水平分布的文本</sys:String>
-    <sys:String x:Key="Standalone_LineSpacingThresholdHeader">换行检测阈值比例</sys:String>
-    <sys:String x:Key="Standalone_LineSpacingThresholdDescription" xml:space="preserve">控制合并文本时是否添加换行符&#10;0.1-0.2: 严格换行，即使很小的距离也换行&#10;0.3-0.5: 标准换行，适合大多数文档&#10;0.8-1.0: 宽松换行，只有距离很大才换行&#10;&gt;2.0: 几乎不换行，所有文本连在一起</sys:String>
-    <sys:String x:Key="Standalone_WordSpacingThresholdHeader">词间距检测阈值比例</sys:String>
-    <sys:String x:Key="Standalone_WordSpacingThresholdDescription" xml:space="preserve">控制合并文本时是否添加空格&#10;0.1-0.2: 标准空格间距&#10;0.3-0.5: 宽松空格间距&#10;&gt;1.0: 几乎不添加空格</sys:String>
+    <sys:String x:Key="Standalone_ImTranWindowModeHeader">图片翻译窗口模式</sys:String>
+    <sys:String x:Key="Standalone_ImTranWindowModeDescription">选择图片翻译结果使用独立窗口或精简悬浮窗口显示</sys:String>
+    <sys:String x:Key="Standalone_ImTranOcrLanguageHeader">图片翻译 OCR 识别语言</sys:String>
+    <sys:String x:Key="Standalone_ImTranOcrLanguageDescription">图片翻译 OCR 阶段使用的识别语言。</sys:String>
+    <sys:String x:Key="Standalone_ImTranCompactOcrLanguageHeader">精简窗口显示识别语言</sys:String>
+    <sys:String x:Key="Standalone_ImTranCompactOcrLanguageDescription">在图片翻译精简窗口底部工具条显示 OCR 识别语言选框。</sys:String>
+    <sys:String x:Key="Standalone_LayoutAnalysisHeader">分段逻辑设置</sys:String>
+    <sys:String x:Key="Standalone_LayoutAnalysisDescription">配置识别结果的分段与合并方式</sys:String>
+    <sys:String x:Key="Standalone_ImTranLanguageDetector">图片翻译语言检测器</sys:String>
+    <sys:String x:Key="Standalone_ImTranLocalDetector">本地识别中英字符比例</sys:String>
+    <sys:String x:Key="Standalone_ImTranLocalDetectorDescription">仅针对图片翻译「本地识别」中英文情况下英文字符占总字符数的比例</sys:String>
+    <sys:String x:Key="Standalone_ImTranDefaultSourceLanguage">默认源语言</sys:String>
+    <sys:String x:Key="Standalone_ImTranDefaultSourceLanguageDescription">当图片翻译自动检测失败时使用此语言。</sys:String>
+    <sys:String x:Key="Standalone_ImTranFirstLanguage">第一语言</sys:String>
+    <sys:String x:Key="Standalone_ImTranFirstLanguageDescription">当图片翻译目标语言设为自动，且源语言为其他语言（包含第二语言）时，目标语言使用第一语言。</sys:String>
+    <sys:String x:Key="Standalone_ImTranSecondLanguage">第二语言</sys:String>
+    <sys:String x:Key="Standalone_ImTranSecondLanguageDescription">当图片翻译目标语言设为自动，且源语言为第一语言时，目标语言使用第二语言。</sys:String>
 
     <!--  History Page  -->
     <sys:String x:Key="Total">共</sys:String>
@@ -372,7 +397,7 @@
     <sys:String x:Key="ConfirmDeleteService">确定要删除服务 '{0}' 吗？</sys:String>
     <sys:String x:Key="Close">关闭</sys:String>
     <sys:String x:Key="LogLevel">日志级别</sys:String>
-    <sys:String x:Key="ConfirmRestartAndBackup">是否确认重启并备份配置</sys:String>
+    <sys:String x:Key="ConfirmRestartAndBackup" xml:space="preserve">是否确认重启并备份配置？&#10;插件较多时压缩可能需要较长时间。压缩期间请勿手动启动软件；软件自动重启后将继续上传，请保持运行直至收到备份结果通知。</sys:String>
     <sys:String x:Key="ConfirmRestartAndRestore">是否确认重启并恢复配置</sys:String>
     <sys:String x:Key="SelectBackupFile">选择备份文件</sys:String>
     <sys:String x:Key="SelectRestoreFile">选择恢复文件</sys:String>
@@ -381,6 +406,7 @@
     <sys:String x:Key="CheckConfigOrLog">请检查配置或查看日志</sys:String>
     <sys:String x:Key="BackupSuccess">备份成功 [{0}]</sys:String>
     <sys:String x:Key="BackupFailed">备份失败,请检查日志</sys:String>
+    <sys:String x:Key="BackupUploading">正在上传备份内容，请稍候</sys:String>
     <sys:String x:Key="DownloadSuccess">下载成功</sys:String>
     <sys:String x:Key="DownloadFailed">下载失败：{0} {1}</sys:String>
     <sys:String x:Key="DownloadException">下载异常：{0}</sys:String>
@@ -392,6 +418,8 @@
     <sys:String x:Key="WebDavAddress">WebDav 地址</sys:String>
     <sys:String x:Key="WebDavUsername">WebDav 用户名</sys:String>
     <sys:String x:Key="WebDavPassword">WebDav 密码</sys:String>
+    <sys:String x:Key="WebDavBackupNotice">WebDAV 备份说明</sys:String>
+    <sys:String x:Key="WebDavBackupNoticeDescription" xml:space="preserve">WebDAV 备份分为压缩和上传两个阶段。压缩期间请勿手动启动软件；软件自动重启后将继续上传，收到备份结果通知即表示流程结束。&#10;插件较多时压缩可能需要较长时间。&#10;如果连接 WebDAV 服务的网络状况不佳，可前往“设置 → 网络 → HTTP 超时”适当调大超时时间。</sys:String>
     <sys:String x:Key="Backup">备份</sys:String>
     <sys:String x:Key="CreateBackup">创建备份</sys:String>
     <sys:String x:Key="Restore">恢复</sys:String>
@@ -411,6 +439,7 @@
     <sys:String x:Key="Add">添加</sys:String>
     <sys:String x:Key="Clear">清空</sys:String>
     <sys:String x:Key="Delete">删除</sys:String>
+    <sys:String x:Key="Rename">重命名</sys:String>
     <sys:String x:Key="Overwrite">覆盖</sys:String>
     <sys:String x:Key="Save">保存</sys:String>
     <sys:String x:Key="Confirm">确认</sys:String>
@@ -425,7 +454,10 @@
     <sys:String x:Key="Exit">退出</sys:String>
     <sys:String x:Key="Reset">重置</sys:String>
     <sys:String x:Key="Retry">重试</sys:String>
+    <sys:String x:Key="Icon">图标</sys:String>
     <sys:String x:Key="Duplicate">重复</sys:String>
+    <sys:String x:Key="ChangeIcon">更换图标</sys:String>
+    <sys:String x:Key="ResetIcon">重置图标</sys:String>
     <sys:String x:Key="Official">官方</sys:String>
     <sys:String x:Key="IdentifiedLanguageLabel">识别为</sys:String>
     <sys:String x:Key="On">开启</sys:String>
@@ -445,7 +477,7 @@
     <sys:String x:Key="WelcomeSetup_LanguageDescription">选择界面语言，更改会按现有设置立即生效。</sys:String>
     <sys:String x:Key="WelcomeSetup_Services">服务配置</sys:String>
     <sys:String x:Key="WelcomeSetup_TranslateServices">翻译服务</sys:String>
-    <sys:String x:Key="WelcomeSetup_OcrTtsServices">OCR / TTS 服务</sys:String>
+    <sys:String x:Key="WelcomeSetup_OcrServices">OCR 服务</sys:String>
     <sys:String x:Key="WelcomeSetup_SpecialServices">专用服务</sys:String>
     <sys:String x:Key="WelcomeSetup_Hotkeys">快捷键</sys:String>
     <sys:String x:Key="WelcomeSetup_SelectService">选择服务</sys:String>
@@ -562,6 +594,7 @@
     <sys:String x:Key="LangEnumDutch">荷兰语</sys:String>
     <sys:String x:Key="LangEnumUkrainian">乌克兰语</sys:String>
     <sys:String x:Key="LangEnumUzbek">乌兹别克语</sys:String>
+    <sys:String x:Key="LangEnumUyghur">维吾尔语</sys:String>
 
     <sys:String x:Key="LanguageDetectorTypeLocal">本地识别</sys:String>
     <sys:String x:Key="LanguageDetectorTypeBaidu">百度识别</sys:String>
@@ -581,7 +614,7 @@
     <sys:String x:Key="TextSeparatorHandleTypeHyphen">处理中划线</sys:String>
     <sys:String x:Key="TextSeparatorHandleTypeUnderscoreAndHyphen">处理下划线和中划线</sys:String>
     <sys:String x:Key="TextSeparatorHandleScopeNone">不启用</sys:String>
-    <sys:String x:Key="TextSeparatorHandleScopeMouseHook">监听鼠标划词</sys:String>
+    <sys:String x:Key="TextSeparatorHandleScopeMouseSelection">鼠标划词</sys:String>
     <sys:String x:Key="TextSeparatorHandleScopeCrossword">划词翻译 / Ctrl+C+C</sys:String>
     <sys:String x:Key="TextSeparatorHandleScopeIncremental">增量翻译</sys:String>
     <sys:String x:Key="TextSeparatorHandleScopeClipboardMonitor">剪贴板监听</sys:String>
@@ -589,6 +622,7 @@
     <sys:String x:Key="TextSeparatorHandleScopeSilentOcr">静默OCR</sys:String>
     <sys:String x:Key="CrosswordFetchFailedFallbackTargetInputTranslate">输入翻译</sys:String>
     <sys:String x:Key="CrosswordFetchFailedFallbackTargetShowWindow">显示主界面</sys:String>
+    <sys:String x:Key="CrosswordFetchFailedFallbackTargetNotifyOnly">仅通知</sys:String>
 
     <sys:String x:Key="PluginTypeAll">所有插件</sys:String>
     <sys:String x:Key="PluginTypeTranslate">文本翻译</sys:String>
@@ -609,12 +643,12 @@
     <sys:String x:Key="ProxyTypeSocks5">Socks5代理</sys:String>
     <sys:String x:Key="ProxyTypeNone">无代理</sys:String>
 
-    <sys:String x:Key="LayoutAnalysisModeMergeAll">合并所有</sys:String>
-    <sys:String x:Key="LayoutAnalysisModeStrictParagraph">严格段落</sys:String>
-    <sys:String x:Key="LayoutAnalysisModeStandardDocument">标准文档</sys:String>
-    <sys:String x:Key="LayoutAnalysisModeColumnDocument">多栏文档</sys:String>
+    <sys:String x:Key="LayoutAnalysisModeAuto">自动</sys:String>
+    <sys:String x:Key="LayoutAnalysisModeProvider">服务商分段</sys:String>
+    <sys:String x:Key="LayoutAnalysisModeSmart">智能分段</sys:String>
     <sys:String x:Key="LayoutAnalysisModeNoMerge">不合并</sys:String>
-    <sys:String x:Key="LayoutAnalysisModeUserDefined">自定义</sys:String>
+    <sys:String x:Key="ImageTranslateWindowModeStandalone">独立窗口</sys:String>
+    <sys:String x:Key="ImageTranslateWindowModeCompact">精简窗口</sys:String>
 
     <sys:String x:Key="WindowScreenTypeRememberLastLaunchLocation">记住上次的位置</sys:String>
     <sys:String x:Key="WindowScreenTypeCursor">鼠标光标所在显示器</sys:String>
@@ -671,7 +705,7 @@
     <sys:String x:Key="DoubleClickTrayFunctionScreenshotTranslate">截图翻译</sys:String>
     <sys:String x:Key="DoubleClickTrayFunctionOCR">文本识别</sys:String>
     <sys:String x:Key="DoubleClickTrayFunctionOpenSettingsWindow">打开设置窗口</sys:String>
-    <sys:String x:Key="DoubleClickTrayFunctionToggleMouseHook">切换鼠标取词</sys:String>
+    <sys:String x:Key="DoubleClickTrayFunctionToggleMouseSelectionTranslation">切换鼠标划词直接翻译</sys:String>
     <sys:String x:Key="DoubleClickTrayFunctionToggleGlobalHotkeys">切换全局快捷键</sys:String>
     <sys:String x:Key="DoubleClickTrayFunctionExit">退出程序</sys:String>
 
@@ -683,6 +717,9 @@
     <sys:String x:Key="SelectPluginFile">选择插件文件</sys:String>
     <sys:String x:Key="PluginInstallFailed">插件安装失败</sys:String>
     <sys:String x:Key="PluginInstallSuccess">插件安装成功</sys:String>
+    <sys:String x:Key="PluginVersionParseFailed">无法解析插件版本: {0}</sys:String>
+    <sys:String x:Key="PluginVersionTooOld">插件版本过旧: {0} v{1}，当前已安装版本为 v{2}。</sys:String>
+    <sys:String x:Key="PluginUpgradeAvailable">可以选择升级到新版本(v{0})。</sys:String>
     <sys:String x:Key="PluginDeleteConfirm" xml:space="preserve">开发者 {0}&#10;版本 {1}&#10;是否确认删除插件 「{2}」</sys:String>
     <sys:String x:Key="PluginDeleteFailed">插件删除失败</sys:String>
     <sys:String x:Key="PluginDeleteForRestart">插件已标记删除，重启后生效</sys:String>
@@ -715,6 +752,12 @@
     <sys:String x:Key="BuiltIn">内置</sys:String>
     <sys:String x:Key="PreInstall">预装</sys:String>
     <sys:String x:Key="Extend">拓展</sys:String>
+    <sys:String x:Key="AddTranslationService">添加翻译服务</sys:String>
+    <sys:String x:Key="AddOcrService">添加文本识别服务</sys:String>
+    <sys:String x:Key="AddTtsService">添加语音合成服务</sys:String>
+    <sys:String x:Key="AddVocabularyService">添加生词本服务</sys:String>
+    <sys:String x:Key="AddService">添加服务</sys:String>
+    <sys:String x:Key="DictionaryServiceNotSupportReplace">词典服务不支持替换功能。</sys:String>
 
     <!--  // Dictionary //  -->
     <sys:String x:Key="PlayPronunciation">播放发音</sys:String>
@@ -749,8 +792,11 @@
     <sys:String x:Key="OcrSettingsToolTip" xml:space="preserve">直接鼠标左击->独立窗口配置&#10;Ctrl+鼠标左击->文本识别配置</sys:String>
 
     <sys:String x:Key="RecognizeLanguage">识别语言</sys:String>
+    <sys:String x:Key="General_ScreenshotOcrLanguageHeader">截图/静默 OCR 识别语言</sys:String>
+    <sys:String x:Key="General_ScreenshotOcrLanguageDescription">截图翻译和静默 OCR 使用的 OCR 识别语言。</sys:String>
     <sys:String x:Key="TranslateLanguage">翻译语言</sys:String>
     <sys:String x:Key="ImageTranslateLanguageIndependentToolTip">图片翻译窗口的翻译语言与主窗口相互独立，修改这里不会影响主窗口。</sys:String>
+    <sys:String x:Key="ImageTranslateLayoutAnalysisToolTip">选择图片翻译 OCR 结果的分段与合并方式，重新执行图片翻译后生效。</sys:String>
     <sys:String x:Key="ImTranSettingsToolTip" xml:space="preserve">直接鼠标左击-&gt;独立窗口配置&#10;Ctrl+鼠标左击-&gt;文本识别配置&#10;Alt+鼠标左击-&gt;文本翻译配置</sys:String>
 
     <!--  // Snackbar Messages //  -->
@@ -826,4 +872,9 @@
     <sys:String x:Key="EditPrompt_Content">编辑</sys:String>
     <sys:String x:Key="Temperature">温度控制</sys:String>
     <sys:String x:Key="Temperature_Description">控制着模型输出的随机性</sys:String>
+    <sys:String x:Key="ImageTranslatePin">贴图</sys:String>
+    <sys:String x:Key="ImageTranslatePinFailed">贴图失败</sys:String>
+    <sys:String x:Key="ImageTranslatePinnedCopyAll">复制全文</sys:String>
+    <sys:String x:Key="ImageTranslatePinnedShowOriginal">显示原图</sys:String>
+    <sys:String x:Key="ImageTranslatePinnedShowTranslation">显示译文</sys:String>
 </ResourceDictionary>

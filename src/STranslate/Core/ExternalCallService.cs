@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using STranslate.Helpers;
 using STranslate.Plugin;
 using STranslate.ViewModels;
 using System.IO;
@@ -37,8 +38,8 @@ public class ExternalCallService(
         }
         catch (Exception ex)
         {
-            var msg = $"启动服务失败请重新配置端口: {prefix}";
-            logger.LogError(ex, msg);
+            logger.LogError(ex, "启动服务失败请重新配置端口: {Prefix}", prefix);
+            var msg = string.Format(i18n.GetTranslation("ExternalCallStartFailed"), prefix);
             OnActionOccurred?.Invoke(msg);
             notification.Show(i18n.GetTranslation("Prompt"), msg);
 
@@ -144,26 +145,28 @@ public class ExternalCallService(
         await _externalCallLock.WaitAsync();
         try
         {
+            using var _ = WindowActivationContext.Push(WindowActivationMode.ForceForeground);
+
             switch (action)
             {
                 case ExternalCallAction.translate:
                     if (string.IsNullOrWhiteSpace(content))
-                        viewModel.InputClearCommand.Execute(WindowActivationMode.ForceForeground);
+                        viewModel.InputClearCommand.Execute(null);
                     else
-                        viewModel.ExecuteTranslate(content, activationMode: WindowActivationMode.ForceForeground);
+                        viewModel.ExecuteTranslate(content);
                     break;
                 case ExternalCallAction.translate_force:
                     if (string.IsNullOrWhiteSpace(content))
-                        viewModel.InputClearCommand.Execute(WindowActivationMode.ForceForeground);
+                        viewModel.InputClearCommand.Execute(null);
                     else
-                        viewModel.ExecuteTranslate(content, "force", WindowActivationMode.ForceForeground);
+                        viewModel.ExecuteTranslate(content, "force");
                     break;
                 case ExternalCallAction.translate_input:
-                    viewModel.InputClearCommand.Execute(WindowActivationMode.ForceForeground);
+                    viewModel.InputClearCommand.Execute(null);
                     break;
                 case ExternalCallAction.translate_ocr:
                     if (string.IsNullOrWhiteSpace(content))
-                        viewModel.ScreenshotTranslateCommand.Execute(null);
+                        await viewModel.ScreenshotTranslateCommand.ExecuteAsync(null);
                     else
                     {
                         using var bitmap = Utilities.ToBitmap(content);
@@ -172,7 +175,7 @@ public class ExternalCallService(
                     break;
                 case ExternalCallAction.translate_ocr_image:
                     if (string.IsNullOrWhiteSpace(content))
-                        viewModel.ImageTranslateCommand.Execute(null);
+                        await viewModel.ImageTranslateCommand.ExecuteAsync(null);
                     else
                     {
                         using var bitmap = Utilities.ToBitmap(content);
@@ -180,10 +183,10 @@ public class ExternalCallService(
                     }
                     break;
                 case ExternalCallAction.translate_crossword:
-                    viewModel.CrosswordTranslateCommand.Execute(null);
+                    await viewModel.CrosswordTranslateCommand.ExecuteAsync(null);
                     break;
                 case ExternalCallAction.translate_mousehook:
-                    viewModel.ToggleMouseHookTranslateCommand.Execute(null);
+                    viewModel.ToggleMouseSelectionTranslationCommand.Execute(null);
                     break;
                 case ExternalCallAction.translate_replace:
                     {
@@ -192,12 +195,12 @@ public class ExternalCallService(
                             viewModel.ReplaceTranslateCancelCommand.Execute(null);
                             return;
                         }
-                        viewModel.ReplaceTranslateCommand.Execute(null);
+                        await viewModel.ReplaceTranslateCommand.ExecuteAsync(null);
                     }
                     break;
                 case ExternalCallAction.ocr:
                     if (string.IsNullOrWhiteSpace(content))
-                        viewModel.OcrCommand.Execute(null);
+                        await viewModel.OcrCommand.ExecuteAsync(null);
                     else
                     {
                         using var bitmap = Utilities.ToBitmap(content);
@@ -212,7 +215,7 @@ public class ExternalCallService(
                             viewModel.SilentOcrCancelCommand.Execute(null);
                             return;
                         }
-                        viewModel.SilentOcrCommand.Execute(null);
+                        await viewModel.SilentOcrCommand.ExecuteAsync(null);
                     }
                     else
                     {
@@ -222,7 +225,7 @@ public class ExternalCallService(
                     break;
                 case ExternalCallAction.ocr_qrcode:
                     if (string.IsNullOrWhiteSpace(content))
-                        viewModel.QrCodeCommand.Execute(null);
+                        await viewModel.QrCodeCommand.ExecuteAsync(null);
                     else
                     {
                         using var bitmap = Utilities.ToBitmap(content);
@@ -230,13 +233,13 @@ public class ExternalCallService(
                     }
                     break;
                 case ExternalCallAction.open_window:
-                    viewModel.ToggleAppCommand.Execute(WindowActivationMode.ForceForeground);
+                    viewModel.ToggleAppCommand.Execute(null);
                     break;
                 case ExternalCallAction.open_preference:
-                    await viewModel.OpenSettingsAndNavigateAsync(null, WindowActivationMode.ForceForeground);
+                    await viewModel.OpenSettingsAndNavigateAsync(null);
                     break;
                 case ExternalCallAction.open_history:
-                    await viewModel.OpenHistoryInternalAsync(WindowActivationMode.ForceForeground);
+                    await viewModel.OpenHistoryInternalAsync();
                     break;
                 case ExternalCallAction.forbiddenhotkey:
                     viewModel.ToggleGlobalHotkey();
@@ -249,7 +252,7 @@ public class ExternalCallService(
                             viewModel.SilentTtsCancelCommand.Execute(null);
                             return;
                         }
-                        viewModel.SilentTtsCommand.Execute(null);
+                        await viewModel.SilentTtsCommand.ExecuteAsync(null);
                     }
                     else
                         await viewModel.SilentTtsHandlerAsync(content);

@@ -53,7 +53,7 @@ public partial class MainWindow : IDisposable
         else
         {
             _viewModel.Show();
-            Win32Helper.SetForegroundWindow(this);
+            Win32Helper.ActivateForegroundWindow(this);
         }
 
         base.OnContentRendered(e);
